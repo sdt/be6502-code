@@ -1,0 +1,30 @@
+# Assemble directly to a plain binary image.
+#   -Fbin     - binary output file
+#   -pad=255  - fill blanks with 0xff
+#   -dotdir   - directives start with a dot
+#   -L $*.lst - listing in $FILE.lst
+#   -o $@     - output to $FILE.bin
+%.bin : %.s
+	vasm -Fbin -pad=255 -I../ -dotdir -L $*.lst -o $@ $<
+
+# Assemble to a "raw" srec file.
+#   -Fsrec    - SREC output file format
+#   -s19      - S1/S9 16-bit records
+#   -dotdir   - directives start with a dot
+#   -L $*.lst - listing in $FILE.lst
+#   -o $@     - output to $FILE.bin
+%.raw-srec : %.s
+	vasm -Fsrec -s19 -I../ -dotdir -L $*.lst -o $@ $<
+
+# Uncomment this to leave the raw-srec files behind
+#.PRECIOUS: %.raw-srec
+
+# Convert "raw" srec file to one suitable for our uploader..
+# --Data_Only               - only S1 records, no S0/S5/S9 etc
+# --Output_Block_Size=64    - Rom page size is 64 bytes, so make S1 blocks same size
+# --Output_Block_Alignment  - Align blocks to 64 bytes where posssible
+# --Offset -0x8000          - adjust the block addresses because rom starts at 0x8000
+%.srec : %.raw-srec
+	srec_cat --Data_Only --Output_Block_Size=64 --Output_Block_Alignment \
+            --Output $@ $< -Offset -0x8000
+
