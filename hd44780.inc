@@ -19,7 +19,8 @@ HD44780_REG_CTL    = 0
 HD44780_BUSY_FLAG  = $80
 
 HD44780_DATA_DDR   = W6552_REG_DDRB
-HD44780_DATA_OR    = W6552_REG_ORA
+HD44780_DATA_OR    = W6552_REG_ORB
+HD44780_DATA_IR    = W6552_REG_IRB
 
 hd44780_init .macro
     ; Set control pins to be output
@@ -42,13 +43,13 @@ hd44780_set_data_read .macro
 
 hd44780_write_register .macro value
     hd44780_wait
-    ; Set the 6522 PB pins into write mode
-    hd44780_set_data_write
     ; Set hd44780 to write to registers
     hd44780_set_registers HD44780_WRITE, HD44780_REG_CTL
     ; Write the value onto the PB/data pins
     lda #\value
     sta HD44780_DATA_OR
+    ; Set the 6522 PB pins into write mode
+    hd44780_set_data_write
     ; Latch the value into the hd44780 by strobing the enable pin
     hd44780_enable
     hd44780_disable
@@ -58,13 +59,13 @@ hd44780_write_register .macro value
 
 hd44780_write_data .macro value
     hd44780_wait
-    ; Set the 6522 PB pins into write mode
-    hd44780_set_data_write
     ; Set hd44780 to write to registers
     hd44780_set_registers HD44780_WRITE, HD44780_REG_DATA
     ; Write the value onto the PB/data pins
     lda #\value
     sta HD44780_DATA_OR
+    ; Set the 6522 PB pins into write mode
+    hd44780_set_data_write
     ; Latch the value into the hd44780 by strobing the enable pin
     hd44780_enable
     hd44780_disable
@@ -77,10 +78,9 @@ hd44780_wait .macro
     hd44780_set_data_read
     ; Set hd44780 to read from registers
     hd44780_set_registers HD44780_READ, HD44780_REG_CTL
-loop\@:
-    hd44780_disable
     hd44780_enable
-    bit HD44780_CTL_IR          ; sets N flag = bit 7 = busy flag
+loop\@:
+    bit HD44780_DATA_IR         ; sets N flag = bit 7 = busy flag
     bmi loop\@                  ; if N flag is set = busy = keep looping
     hd44780_disable
     .endm
