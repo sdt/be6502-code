@@ -31,6 +31,32 @@ hd44780_init .macro
     hd44780_set_data_read
     .endm
 
+hd44780_write_string .macro address, row
+dram_cmd\@ = $80 | ($40 * \row)
+    hd44780_write_register dram_cmd\@
+    ldx #0
+loop\@:
+    lda \address,x
+    beq done\@      ; finished if we read a null
+
+    hd44780_wait
+    ; Set hd44780 to write to registers
+    hd44780_set_registers HD44780_WRITE, HD44780_REG_DATA
+    ; Write the value onto the PB/data pins
+    lda \address,x
+    inx
+    sta HD44780_DATA_OR
+    ; Set the 6522 PB pins into write mode
+    hd44780_set_data_write
+    ; Latch the value into the hd44780 by strobing the enable pin
+    hd44780_enable
+    hd44780_disable
+    jmp loop\@
+done\@:
+    ; Set the 6522 PB pins back into read mode
+    hd44780_set_data_read
+    .endm
+
 hd44780_set_data_write .macro
     lda #$ff
     sta HD44780_DATA_DDR
