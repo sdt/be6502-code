@@ -1,8 +1,16 @@
-    .include "6552.inc"
-    .include "hd44780.inc"
+    .dsect
+    .org $0000
+    ; ZERO PAGE starts here
+hd44780_string  .addr   0
+
+    .org $0200
+    .dend
 
     .org $8000
 
+    .include "6552.inc"
+    .include "hd44780.inc"
+                    ;0123456789abcdef
 msg0    .string     "What is this?"
 msg1    .string     "Could it be?"
 msg2    .string     "6502 breadboard!"
