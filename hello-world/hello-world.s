@@ -11,10 +11,10 @@ hd44780_string  .addr   0
     .include "6552.inc"
     .include "hd44780.inc"
                     ;0123456789abcdef
-msg0    .string     "What is this?"
-msg1    .string     "Could it be?"
-msg2    .string     "6502 breadboard!"
-msg3    .string     "Eight bit action"
+msg0    .string     "65c02 at one MHz"
+msg1    .string     "We can go faster"
+msg2    .string     "Eight bit action"
+msg3    .string     "6502 breadboard!"
 
 ; Code
 reset:
@@ -26,13 +26,33 @@ reset:
     hd44780_write_register $0e ; display on, cursor on, blink off
 
 loop:
+    ;hd44780_write_register $01 ; clear
     hd44780_write_string msg0, 0
     hd44780_write_string msg1, 1
-    hd44780_write_register $01 ; clear
+    jsr delay
+    ;hd44780_write_register $01 ; clear
     hd44780_write_string msg2, 0
     hd44780_write_string msg3, 1
-    hd44780_write_register $01 ; clear
+    jsr delay
     jmp loop
+end:
+    jmp end
+;    hd44780_write_register $01 ; clear
+
+delay:
+    jsr .delay2
+.delay2:
+    jsr .delay3
+.delay3
+    ldy #0
+.outer:
+    ldx #0
+.inner:
+    dex
+    bne .inner
+    dey
+    bne .outer
+    rts
 
     ; Interrupt vector table.
     .include "vectors.inc"

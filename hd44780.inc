@@ -31,32 +31,6 @@ hd44780_init .macro
     hd44780_set_data_read
     .endm
 
-hd44780_write_string .macro address, row
-dram_cmd\@ = $80 | ($40 * \row)
-    hd44780_write_register dram_cmd\@
-    ldx #0
-loop\@:
-    lda \address,x
-    beq done\@      ; finished if we read a null
-
-    jsr hd44780_wait
-    ; Set hd44780 to write to registers
-    hd44780_set_registers HD44780_WRITE, HD44780_REG_DATA
-    ; Write the value onto the PB/data pins
-    lda \address,x
-    inx
-    sta HD44780_DATA_OR
-    ; Set the 6522 PB pins into write mode
-    hd44780_set_data_write
-    ; Latch the value into the hd44780 by strobing the enable pin
-    hd44780_enable
-    hd44780_disable
-    jmp loop\@
-done\@:
-    ; Set the 6522 PB pins back into read mode
-    hd44780_set_data_read
-    .endm
-
 hd44780_set_data_write .macro
     lda #$ff
     sta HD44780_DATA_DDR
@@ -65,15 +39,6 @@ hd44780_set_data_write .macro
 hd44780_set_data_read .macro
     lda #$00
     sta HD44780_DATA_DDR
-    .endm
-
-hd44780_write_register .macro value
-    jsr hd44780_wait
-    ; Set hd44780 to write to registers
-    hd44780_set_registers HD44780_WRITE, HD44780_REG_CTL
-    ; Write the value onto the PB/data pins
-    lda #\value
-    jsr hd44780_write_value
     .endm
 
 hd44780_write_data .macro value
@@ -162,16 +127,17 @@ hd44780_write_value:
     hd44780_set_data_read
     rts
 
-hd44780_write_string2 .macro address, row
+hd44780_write_string .macro address, row
     lda #<\address
     sta hd44780_string
     lda #>\address
     sta hd44780_string+1
 dram_cmd\@ = $80 | ($40 * \row)
     hd44780_write_register dram_cmd\@
-    jsr _hd44780_write_string2
+    jsr _hd44780_write_string
+    .endm
 
-_hd44780_write_string2:
+_hd44780_write_string:
     ldy #0
 .loop:
     lda (hd44780_string),y
@@ -193,6 +159,20 @@ _hd44780_write_string2:
 .done:
     ; Set the 6522 PB pins back into read mode
     hd44780_set_data_read
+    rts
+
+hd44780_write_register .macro value
+    lda #\value
+    jsr _hd44780_write_register
     .endm
+
+_hd44780_write_register:
+    pha
+    jsr hd44780_wait
+    ; Set hd44780 to write to registers
+    hd44780_set_registers HD44780_WRITE, HD44780_REG_CTL
+    ; Write the value onto the PB/data pins
+    pla
+    jmp hd44780_write_value
 
 ; vim: set filetype=asm:
