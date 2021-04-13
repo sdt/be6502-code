@@ -5,7 +5,6 @@ num  .db 0
 den  .db 0
 quo  .db 0
 rem  .db 0
-mask .db 0
 
     .dend
 
@@ -38,26 +37,19 @@ end:
 ;   end
 div8:
     lda #0
-    sta quo
-    sta rem
+    sta quo         ; A holds rem
 
-    lda #%1000000
-    sta mask
-.loop:
+    ldx #8
+loop:
     asl num
-    rol rem         ; R = (R << 1) | N(i)
-    lda rem
-    cmp den
-    bmi .skip       ; skip if rem < den
-    sec             ; set carry before sub
-    sbc den         ; rem -= den
-    sta rem
-    lda mask
-    ora quo
-    sta quo
-.skip:
-    clc
-    ror mask
-    bne .loop
+    rol A           ; rem = (rem << 1) | num[i]
+    cmp den         ; cmp rem, den
+    bmi skip        ; skip if rem < den
+    sbc den         ; rem -= den ; c = 1 already
+skip:
+    rol quo         ; carry flag is set by bmi: quo = (quo << 1) | C
+    dex
+    bne loop
+    rts
 
     .include "vectors.inc"
