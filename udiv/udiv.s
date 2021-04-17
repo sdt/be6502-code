@@ -1,23 +1,8 @@
     .dsect
     .org $0200
-
-num8  .db 0
-den8  .db 0
-quo8  .db 0
-rem8  .db 0
-
-num16 .dw 0
-den16 .dw 0
-quo16 .dw 0
-rem16 .dw 0
-
-itoa_in:    .dw 0
-itoa_out:   .db 0, 0, 0, 0, 0, 0
-
     .dend
 
     .org $8000
-
 reset:
     ldx #$ff
     txs
@@ -43,6 +28,13 @@ end:
 ;           Q(i) := 1
 ;       end
 ;   end
+    .dsect
+num8  .db 0
+den8  .db 0
+quo8  .db 0
+rem8  .db 0
+    .dend
+
 div8:
     lda #0
     sta quo8        ; A holds rem8
@@ -73,6 +65,13 @@ test16:
     jsr div16
 end16:
     jmp end16
+
+    .dsect
+num16 .dw 0
+den16 .dw 0
+quo16 .dw 0
+rem16 .dw 0
+    .dend
 
 div16:
     lda #0
@@ -109,6 +108,11 @@ div16:
     dex
     bne .loop
     rts
+
+    .dsect
+itoa_in:    .dw 0
+itoa_out:   .db 0, 0, 0, 0, 0, 0
+    .dend
 
 itoa:
     lda 0
