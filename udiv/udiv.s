@@ -11,6 +11,9 @@ den16 .dw 0
 quo16 .dw 0
 rem16 .dw 0
 
+itoa_in:    .dw 0
+itoa_out:   .db 0, 0, 0, 0, 0, 0
+
     .dend
 
     .org $8000
@@ -79,19 +82,19 @@ div16:
     sta quo16+1     ; quo16 = 0
 
     ldx #16
-loop:
+.loop:
     asl num16+0
     rol num16+1     ; num16 <<= 1 ; top bit of num16 now in carry
     rol rem16+0
     rol rem16+1     ; rem16 = (rem16 << 1) | carry
     lda rem16+1
     cmp den16+1
-    bcc r_lt_d      ; if r.hi < d.hi -> do R <  D branch
-    bne r_ge_d      ; if r.hi > d.hi -> do R >= D branch
+    bcc .r_lt_d     ; if r.hi < d.hi -> do R <  D branch
+    bne .r_ge_d     ; if r.hi > d.hi -> do R >= D branch
     lda rem16+0     ; r.hi == d.hi
     cmp den16+0
-    bcc r_lt_d      ; if r.lo < d.lo -> do R < D branch
-r_ge_d
+    bcc .r_lt_d     ; if r.lo < d.lo -> do R < D branch
+.r_ge_d:
     sec             ; set carry ready for subtraction ; R -= D
     lda rem16+0
     sbc den16+0
@@ -100,11 +103,46 @@ r_ge_d
     sbc den16+1
     sta rem16+1
     sec             ; set carry ready to shift into quo16
-r_lt_d              ; if we jumped here, it was because carry was clear
+.r_lt_d:            ; if we jumped here, it was because carry was clear
     rol quo16+0
     rol quo16+1     ; Q = (Q << 1) | C
     dex
     bne .loop
     rts
+
+itoa:
+    lda 0
+    pha             ; push the string terminator onto the stack
+    lda itoa_in+0
+    sta num16+0
+    lda itoa_in+1
+    sta num16+1     ; num16 = itoa_in
+    lda #10
+    sta den16+0
+    lda #0
+    sta den16+1     ; den16 = 0
+.loop:
+    jsr div16       ; quo16 = N % 10
+    lda rem16+0
+    clc
+    adc '0'
+    pha             ; push ascii digit onto the stack
+    lda quo16+0
+    ora quo16+1
+    beq .done       ; if quo16 is zero, we have all the digits on the stack
+    lda quo16+0
+    sta num16+0
+    lda quo16+1
+    sta num16+1     ; num16 = N / 10
+    jmp .loop
+.done
+    ldx #$ff
+.pop:
+    inx             ; pre-increment to let pla set the z flag
+    pla
+    sta itoa_out,x
+    bne .pop
+    rts
+
 
     .include "vectors.inc"
