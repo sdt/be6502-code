@@ -67,6 +67,33 @@ end16:
     jmp end16
 
     .dsect
+num10 .dw 0         ; 16 bit numerator, 8 bit denominator = 10
+quo10 .dw 0         ; 16 bit quotient
+rem10 .db 0         ; but 8 bit remainer: (0..9)
+   .dend
+
+div10:
+    lda #0          ; A holds rem10
+    sta quo10+0
+    sta quo10+1     ; quo10 = 0
+
+    ldx #16
+.loop:
+    asl num10+0
+    rol num10+1     ; num10 <<= 1 ; top bit of num16 now in carry
+    rol A           ; rem10 = (rem10 << 1) | carry
+    cmp #10
+    bcc .r_lt_d     ; if r < d; do R < branch
+    sbc #10         ; r -= d
+.r_lt_d
+    rol quo10+0
+    rol quo10+1     ; quo10 = (quo10 << 1) | carry
+    dex
+    bne .loop
+    sta rem10
+    rts
+
+    .dsect
 num16 .dw 0
 den16 .dw 0
 quo16 .dw 0
