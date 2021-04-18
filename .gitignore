@@ -1,3 +1,4 @@
+*.bin
 *.lst
 *.raw-srec
 *.srec
