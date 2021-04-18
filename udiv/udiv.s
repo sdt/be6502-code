@@ -72,6 +72,14 @@ quo10 .dw 0         ; 16 bit quotient
 rem10 .db 0         ; but 8 bit remainer: (0..9)
    .dend
 
+; INPUT:
+;   num10: 16 bit unsigned numerator
+; OUTPUT:
+;   quo10: 16 bit unsigned quotient
+;   rem10:  8 bit unsigned remainder
+;   reg A:  8 bit unsigned remainder
+;   reg X;  zero
+;   num10:  zero
 div10:
     lda #0          ; A holds rem10
     sta quo10+0
@@ -145,30 +153,25 @@ itoa:
     lda 0
     pha             ; push the string terminator onto the stack
     lda itoa_in+0
-    sta num16+0
+    sta num10+0
     lda itoa_in+1
-    sta num16+1     ; num16 = itoa_in
-    lda #10
-    sta den16+0
-    lda #0
-    sta den16+1     ; den16 = 0
+    sta num10+1     ; num10 = itoa_in
 .loop:
-    jsr div16       ; quo16 = N % 10
-    lda rem16+0
+    jsr div10       ; quo16 = N / 10 ; A = N % 10
     clc
-    adc '0'
+    adc '0'         ; A = (N % 10) + '0'
     pha             ; push ascii digit onto the stack
-    lda quo16+0
-    ora quo16+1
+    lda quo10+0
+    ora quo10+1
     beq .done       ; if quo16 is zero, we have all the digits on the stack
-    lda quo16+0
-    sta num16+0
-    lda quo16+1
-    sta num16+1     ; num16 = N / 10
+    lda quo10+0
+    sta num10+0
+    lda quo10+1
+    sta num10+1     ; num10 = N / 10
     jmp .loop
 .done
-    ldx #$ff
-.pop:
+    ldx #$ff        ; pop the digits off the stack into itoa_out
+.pop:               ; including the zero terminator
     inx             ; pre-increment to let pla set the z flag
     pla
     sta itoa_out,x
