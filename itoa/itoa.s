@@ -16,7 +16,7 @@ start:
 
     ;hd44780_write_string msg0, 0
 
-    lda #250
+    lda #240
     sta itoa_in+0
     lda #0
     sta itoa_in+1
@@ -88,11 +88,29 @@ itoa:
 ;   reg X;  zero
 ;   num10:  zero
 div10:
+    lda num10+1
+    beq div10_8     ; if top byte is zero, use 8-bit mode
     lda #0          ; A holds rem10
     ldx #16
 .loop:
     asl num10+0
-    rol num10+1     ; num10 <<= 1 ; top bit of num16 now in carry
+    rol num10+1     ; num10 <<= 1 ; top bit of num10 now in carry
+    rol A           ; rem10 = (rem10 << 1) | carry
+    cmp #10
+    bcc .r_lt_d     ; if r < d; do branch
+    sbc #10         ; r -= d (carry is already set)
+    smb 0,num10+0   ; num10 |= 1
+.r_lt_d
+    dex
+    bne .loop
+    rts
+
+    ; 8 bit numerator only - no point looping over the top bits if they're zero
+div10_8:
+    lda #0          ; A holds rem10
+    ldx #8
+.loop:
+    asl num10       ; num10 <<= 1 ; top bit of num10 now in carry
     rol A           ; rem10 = (rem10 << 1) | carry
     cmp #10
     bcc .r_lt_d     ; if r < d; do branch
