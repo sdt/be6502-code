@@ -1,19 +1,15 @@
-    .dsect
-    .org $0000
-hd44780_string .addr 0
-
-    .org $0200
-    .dend
-
-    .org $8000
-
+    .include "prelude.inc"
     .include "6552.inc"
     .include "hd44780.inc"
 
              ;0123456789abcdef
-msg0 .string "Binary to ascii?"
+;msg0 .string "Binary to ascii?"
 
-reset:
+    ZPW     hd44780_string
+    ZPW     itoa_in
+    ZPDATA  itoa_out, 6
+
+start:
     hd44780_init
 
     hd44780_write_register $38 ; 8-bit interface, 2-line display, 5x8 fnot
@@ -21,10 +17,7 @@ reset:
     hd44780_write_register $02 ; home
     hd44780_write_register $0e ; display on, cursor on, blink off
 
-;    hd44780_write_string msg0, 0
-
-    ldx #$ff
-    txs
+    ;hd44780_write_string msg0, 0
 
     lda #0
     sta itoa_in+0
@@ -35,30 +28,20 @@ loop:
 
     hd44780_write_string itoa_out, 0
 
-    clc
-    lda itoa_in+0
-    adc #1
-    sta itoa_in+0
-    lda itoa_in+1
-    adc #0
-    sta itoa_in+1
+INCW .macro arg
+    inc \arg+0
+    bne .no_carry\@
+    inc \arg+1
+.no_carry\@:
+    .endm
+
+    INCW itoa_in
     jsr itoa
 
     hd44780_write_string itoa_out, 1
 
-    clc
-    lda itoa_in+0
-    adc #1
-    sta itoa_in+0
-    lda itoa_in+1
-    adc #0
-    sta itoa_in+1
-    jmp loop
-
-    .dsect
-itoa_in:    .dw 0
-itoa_out:   .db 0, 0, 0, 0, 0, 0
-    .dend
+    INCW itoa_in
+    bra loop
 
 itoa:
     lda #0
