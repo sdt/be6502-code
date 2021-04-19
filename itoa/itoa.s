@@ -2,9 +2,6 @@
     .include "6552.inc"
     .include "hd44780.inc"
 
-             ;0123456789abcdef
-;msg0 .string "Binary to ascii?"
-
     ZPW     hd44780_string
     ZPW     itoa_in
     ZPDATA  itoa_out, 6
@@ -19,8 +16,9 @@ start:
 
     ;hd44780_write_string msg0, 0
 
-    lda #0
+    lda #250
     sta itoa_in+0
+    lda #0
     sta itoa_in+1
 
 loop:
@@ -55,13 +53,9 @@ itoa:
     clc
     adc #'0'        ; A = (N % 10) + '0'
     pha             ; push ascii digit onto the stack
-    lda quo10+0
-    ora quo10+1
+    lda num10+0
+    ora num10+1
     beq .done       ; if quo16 is zero, we have all the digits on the stack
-    lda quo10+0
-    sta num10+0
-    lda quo10+1
-    sta num10+1     ; num10 = N / 10
     jmp .loop
 .done
     ldx #$ff        ; pop the digits off the stack into itoa_out
@@ -82,39 +76,31 @@ itoa:
 ;           Q(i) := 1
 ;       end
 ;   end
-    .dsect
-num10 .dw 0         ; 16 bit numerator, 8 bit denominator = 10
-quo10 .dw 0         ; 16 bit quotient
-rem10 .db 0         ; but 8 bit remainer: (0..9)
-   .dend
+
+    ZPW num10           ; 16 bit numerator in, 16 bit quotient out
+
 
 ; INPUT:
 ;   num10: 16 bit unsigned numerator
 ; OUTPUT:
-;   quo10: 16 bit unsigned quotient
-;   rem10:  8 bit unsigned remainder
+;   num10: 16 bit unsigned quotient
 ;   reg A:  8 bit unsigned remainder
 ;   reg X;  zero
 ;   num10:  zero
 div10:
     lda #0          ; A holds rem10
-    sta quo10+0
-    sta quo10+1     ; quo10 = 0
-
     ldx #16
 .loop:
     asl num10+0
     rol num10+1     ; num10 <<= 1 ; top bit of num16 now in carry
     rol A           ; rem10 = (rem10 << 1) | carry
     cmp #10
-    bcc .r_lt_d     ; if r < d; do R < branch
-    sbc #10         ; r -= d
+    bcc .r_lt_d     ; if r < d; do branch
+    sbc #10         ; r -= d (carry is already set)
+    smb 0,num10+0   ; num10 |= 1
 .r_lt_d
-    rol quo10+0
-    rol quo10+1     ; quo10 = (quo10 << 1) | carry
     dex
     bne .loop
-    sta rem10
     rts
 
     .include "vectors.inc"
