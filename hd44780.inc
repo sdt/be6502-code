@@ -22,6 +22,8 @@ HD44780_DATA_DDR   = W6552_REG_DDRB
 HD44780_DATA_OR    = W6552_REG_ORB
 HD44780_DATA_IR    = W6552_REG_IRB
 
+    ZPW     hd44780_string
+
 hd44780_init .macro
     ; Set control pins to be output
     lda #HD44780_CTL_MASK
