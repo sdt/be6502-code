@@ -2,17 +2,16 @@
     .include "6552.inc"
     .include "hd44780.inc"
 
-    ZPW     hd44780_string
     ZPW     itoa_in
     ZPDATA  itoa_out, 6
 
 start:
-    hd44780_init
+    HD44780_INIT
 
-    hd44780_write_register $38 ; 8-bit interface, 2-line display, 5x8 fnot
-    hd44780_write_register $01 ; clear
-    hd44780_write_register $02 ; home
-    hd44780_write_register $0e ; display on, cursor on, blink off
+    HD44780_WRITE_REGISTER $38 ; 8-bit interface, 2-line display, 5x8 fnot
+    HD44780_WRITE_REGISTER $01 ; clear
+    HD44780_WRITE_REGISTER $02 ; home
+    HD44780_WRITE_REGISTER $0e ; display on, cursor on, blink off
 
     ;hd44780_write_string msg0, 0
 
@@ -24,7 +23,7 @@ start:
 loop:
     jsr itoa
 
-    hd44780_write_string itoa_out, 0
+    HD44780_WRITE_STRING itoa_out, 0
 
 INCW .macro arg
     inc \arg+0
@@ -36,7 +35,7 @@ INCW .macro arg
     INCW itoa_in
     jsr itoa
 
-    hd44780_write_string itoa_out, 1
+    HD44780_WRITE_STRING itoa_out, 1
 
     INCW itoa_in
     bra loop
