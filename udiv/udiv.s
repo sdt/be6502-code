@@ -1,12 +1,7 @@
-    .dsect
-    .org $0200
-    .dend
+    .include "prelude.inc"
 
-    .org $8000
-reset:
-    ldx #$ff
-    txs
 
+start:
     lda #247
     sta num8
 
