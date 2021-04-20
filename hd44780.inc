@@ -24,51 +24,51 @@ HD44780_DATA_IR    = W6552_REG_IRB
 
     ZPW     hd44780_string
 
-hd44780_init .macro
+HD44780_INIT .macro
     ; Set control pins to be output
     lda #HD44780_CTL_MASK
     sta HD44780_CTL_DDR
-    hd44780_disable
+    HD44780_DISABLE
     ; Set data pins to be input
-    hd44780_set_data_read
+    HD44780_SET_DATA_READ
     .endm
 
-hd44780_set_data_write .macro
+HD44780_SET_DATA_WRITE .macro
     lda #$ff
     sta HD44780_DATA_DDR
     .endm
 
-hd44780_set_data_read .macro
+HD44780_SET_DATA_READ .macro
     lda #$00
     sta HD44780_DATA_DDR
     .endm
 
-hd44780_write_data .macro value
+HD44780_WRITE_DATA .macro value
     jsr hd44780_wait
     ; Set hd44780 to write to registers
-    hd44780_set_registers HD44780_WRITE, HD44780_REG_DATA
+    HD44780_SET_REGISTERS HD44780_WRITE, HD44780_REG_DATA
     ; Write the value onto the PB/data pins
     lda #\value
     jsr hd44780_write_value
     .endm
 
-hd44780_set_registers .macro rw, rs
+HD44780_SET_REGISTERS .macro rw, rs
 value\@ = \rw | \rs
 mask\@ = HD44780_CTL_PIN_RW | HD44780_CTL_PIN_RS
-    write_bits HD44780_CTL_OR, value\@, mask\@
+    WRITE_BITS HD44780_CTL_OR, value\@, mask\@
     .endm
 
-hd44780_enable .macro
-    set_bits HD44780_CTL_OR, HD44780_CTL_PIN_E
+HD44780_ENABLE .macro
+    SET_BITS HD44780_CTL_OR, HD44780_CTL_PIN_E
     .endm
 
-hd44780_disable .macro
-    clear_bits HD44780_CTL_OR, HD44780_CTL_PIN_E
+HD44780_DISABLE .macro
+    CLEAR_BITS HD44780_CTL_OR, HD44780_CTL_PIN_E
     .endm
 
-; write_bits address, value, mask
+; WRITE_BITS address, value, mask
 ; => address = (address & ~mask) | value
-write_bits .macro address, value, mask
+WRITE_BITS .macro address, value, mask
 invmask\@ = \mask ^ $ff
     lda \address
     and #invmask\@
@@ -76,24 +76,24 @@ invmask\@ = \mask ^ $ff
     sta \address
     .endm
 
-; set_bits address, bits
+; SET_BITS address, bits
 ; => address |= bits
-set_bits .macro address, bits
+SET_BITS .macro address, bits
     lda \address
     ora #\bits
     sta \address
     .endm
 
-; clear_bits address, bits
+; CLEAR_BITS address, bits
 ; => address &= ~bits
-clear_bits .macro address, bits
+CLEAR_BITS .macro address, bits
     lda \address
 invbits\@ = \bits ^ $ff
     and #invbits\@
     sta \address
     .endm
 
-set_then_clear_bits .macro address, bits
+SET_THEN_CLEAR_BITS .macro address, bits
     lda \address
     ora #\bits
 invbits\@ = \bits ^ $ff
@@ -104,14 +104,14 @@ invbits\@ = \bits ^ $ff
 
 hd44780_wait:
     ; Set the 6522 PB pins into read mode
-    hd44780_set_data_read
+    HD44780_SET_DATA_READ
     ; Set hd44780 to read from registers
-    hd44780_set_registers HD44780_READ, HD44780_REG_CTL
-    hd44780_enable
+    HD44780_SET_REGISTERS HD44780_READ, HD44780_REG_CTL
+    HD44780_ENABLE
 .loop:
     bit HD44780_DATA_IR         ; sets N flag = bit 7 = busy flag
     bmi .loop                   ; if N flag is set = busy = keep looping
-    hd44780_disable
+    HD44780_DISABLE
     rts
 
 ; Value to write is in A. A is not preserved.
@@ -121,25 +121,29 @@ hd44780_wait:
 hd44780_write_value:
     sta HD44780_DATA_OR
     ; Set the 6522 PB pins into write mode
-    hd44780_set_data_write
+    HD44780_SET_DATA_WRITE
     ; Latch the value into the hd44780 by strobing the enable pin
-    hd44780_enable
-    hd44780_disable
+    HD44780_ENABLE
+    HD44780_DISABLE
     ; Set the 6522 PB pins back into read mode
-    hd44780_set_data_read
+    HD44780_SET_DATA_READ
     rts
 
-hd44780_write_string .macro address, row
+HD44780_SET_CURSOR .macro row, col
+dram_cmd\@ = $80 | ($40 * \row) | \col
+    HD44780_WRITE_REGISTER dram_cmd\@
+    .endm
+
+HD44780_WRITE_STRING .macro address, row
+    HD44780_SET_CURSOR \row, 0
     lda #<\address
     sta hd44780_string
     lda #>\address
     sta hd44780_string+1
-dram_cmd\@ = $80 | ($40 * \row)
-    hd44780_write_register dram_cmd\@
-    jsr _hd44780_write_string
+    jsr hd44780_write_string
     .endm
 
-_hd44780_write_string:
+hd44780_write_string:
     ldy #0
 .loop:
     lda (hd44780_string),y
@@ -147,32 +151,32 @@ _hd44780_write_string:
 
     jsr hd44780_wait
     ; Set hd44780 to write to registers
-    hd44780_set_registers HD44780_WRITE, HD44780_REG_DATA
+    HD44780_SET_REGISTERS HD44780_WRITE, HD44780_REG_DATA
     ; Write the value onto the PB/data pins
     lda (hd44780_string),y
     iny
     sta HD44780_DATA_OR
     ; Set the 6522 PB pins into write mode
-    hd44780_set_data_write
+    HD44780_SET_DATA_WRITE
     ; Latch the value into the hd44780 by strobing the enable pin
-    hd44780_enable
-    hd44780_disable
+    HD44780_ENABLE
+    HD44780_DISABLE
     jmp .loop
 .done:
     ; Set the 6522 PB pins back into read mode
-    hd44780_set_data_read
+    HD44780_SET_DATA_READ
     rts
 
-hd44780_write_register .macro value
+HD44780_WRITE_REGISTER .macro value
     lda #\value
-    jsr _hd44780_write_register
+    jsr hd44780_write_register
     .endm
 
-_hd44780_write_register:
+hd44780_write_register:
     pha
     jsr hd44780_wait
     ; Set hd44780 to write to registers
-    hd44780_set_registers HD44780_WRITE, HD44780_REG_CTL
+    HD44780_SET_REGISTERS HD44780_WRITE, HD44780_REG_CTL
     ; Write the value onto the PB/data pins
     pla
     jmp hd44780_write_value
