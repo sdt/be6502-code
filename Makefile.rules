@@ -11,6 +11,13 @@ ${PROJECT}.bin: ${PROJECT}.s ${DEPS} ../*.inc
 
 all: ${PROJECT}.srec ${PROJECT}.bin
 
+ifdef ROM_PORT
+    SET_ROM_PORT=--port ${ROM_PORT}
+endif
+.PHONY: rom
+rom: ${PROJECT}.srec
+	write-rom.py ${SET_ROM_PORT} ${PROJECT}.srec
+
 clean:
 	rm -f *.bin *.lst *.srec *.raw-srec
 
