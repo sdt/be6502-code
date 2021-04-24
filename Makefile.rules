@@ -1,3 +1,21 @@
+# PROJECT should be set to the basename of the main file.
+# eg. To build pacman.srec from pacman.s, use PROJECT=pacman
+# Use DEPS to specify more dependencies. eg DEPS=ghost.s fruit.s
+ifndef PROJECT
+    $(error PROJECT not set)
+endif
+
+${PROJECT}.srec: ${PROJECT}.s ${DEPS} ../*.inc
+
+${PROJECT}.bin: ${PROJECT}.s ${DEPS} ../*.inc
+
+all: ${PROJECT}.srec ${PROJECT}.bin
+
+clean:
+	rm -f *.bin *.lst *.srec *.raw-srec
+
+.DEFAULT_GOAL := ${PROJECT}.srec
+
 # Assemble directly to a plain binary image.
 #   -Fbin     - binary output file
 #   -pad=255  - fill blanks with 0xff
