@@ -6,12 +6,7 @@
     ZPDATA  itoa_out, 6
 
 start:
-    HD44780_INIT
-
-    HD44780_WRITE_REGISTER $38 ; 8-bit interface, 2-line display, 5x8 fnot
-    HD44780_WRITE_REGISTER $01 ; clear
-    HD44780_WRITE_REGISTER $02 ; home
-    HD44780_WRITE_REGISTER $0e ; display on, cursor on, blink off
+    jsr hd44780_init
 
     ;hd44780_write_string msg0, 0
 
