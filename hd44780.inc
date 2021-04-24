@@ -181,4 +181,12 @@ hd44780_write_register:
     pla
     jmp hd44780_write_value
 
+hd44780_init:
+    HD44780_INIT
+    HD44780_WRITE_REGISTER $38 ; 8-bit interface, 2-line display, 5x8 fnot
+    HD44780_WRITE_REGISTER $01 ; clear
+    HD44780_WRITE_REGISTER $02 ; home
+    HD44780_WRITE_REGISTER $0e ; display on, cursor on, blink off
+    rts
+
 ; vim: set filetype=asm:
