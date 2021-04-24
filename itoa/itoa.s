@@ -18,7 +18,7 @@ start:
 loop:
     jsr itoa
 
-    HD44780_WRITE_STRING itoa_out, 0
+    HD44780_WRITE_STRING_AT itoa_out, 0, 0
 
 INCW .macro arg
     inc \arg+0
@@ -30,7 +30,7 @@ INCW .macro arg
     INCW itoa_in
     jsr itoa
 
-    HD44780_WRITE_STRING itoa_out, 1
+    HD44780_WRITE_STRING_AT itoa_out, 1, 0
 
     INCW itoa_in
     bra loop

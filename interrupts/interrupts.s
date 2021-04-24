@@ -94,14 +94,14 @@ nmi_no_change:
     bra loop
 
 update_display:
-    HD44780_WRITE_STRING irq_msg, 0
+    HD44780_WRITE_STRING_AT irq_msg, 0, 0
     CPY16 last_irq_count, itoa_in
     jsr itoa
     jsr pad_itoa_out
     STO16 itoa_out, hd44780_string
     jsr hd44780_write_string
 
-    HD44780_WRITE_STRING nmi_msg, 1
+    HD44780_WRITE_STRING_AT nmi_msg, 1, 0
     CPY16 last_nmi_count, itoa_in
     jsr itoa
     jsr pad_itoa_out

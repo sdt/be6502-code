@@ -134,8 +134,8 @@ dram_cmd\@ = $80 | ($40 * \row) | \col
     HD44780_WRITE_REGISTER dram_cmd\@
     .endm
 
-HD44780_WRITE_STRING .macro address, row
-    HD44780_SET_CURSOR \row, 0
+HD44780_WRITE_STRING_AT .macro address, row, col
+    HD44780_SET_CURSOR \row, \col
     lda #<\address
     sta hd44780_string
     lda #>\address

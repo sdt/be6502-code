@@ -14,12 +14,12 @@ start:
 
 loop:
     ;HD44780_WRITE_REGISTER $01 ; clear
-    HD44780_WRITE_STRING msg0, 0
-    HD44780_WRITE_STRING msg1, 1
+    HD44780_WRITE_STRING_AT msg0, 0, 0
+    HD44780_WRITE_STRING_AT msg1, 1, 0
 ;    jsr delay
     ;HD44780_WRITE_REGISTER $01 ; clear
-    HD44780_WRITE_STRING msg2, 0
-    HD44780_WRITE_STRING msg3, 1
+    HD44780_WRITE_STRING_AT msg2, 0, 0
+    HD44780_WRITE_STRING_AT msg3, 1, 0
 ;    jsr delay
     jmp loop
 end:
