@@ -31,6 +31,10 @@ W6552_T1_MODE_CONTINUOUS        = %01000000
 W6552_T1_MODE_SINGLE_SHOT_PB6   = %10000000
 W6552_T1_MODE_CONTINUOUS_PB6    = %11000000
 
+W6552_T2_MODE_MASK              = %00100000
+W6552_T2_MODE_SINGLE_SHOT       = %00000000
+W6552_T2_MODE_COUNTDOWN_PB6     = %00100000
+
 W6552_IER_ENABLE                = %10000000
 W6552_IER_DISABLE               = %00000000
 W6552_IER_CA2                   = %00000001
@@ -40,6 +44,7 @@ W6552_IER_CB2                   = %00001000
 W6552_IER_CB1                   = %00010000
 W6552_IER_T2                    = %00100000
 W6552_IER_T1                    = %01000000
+W6552_IER_IRQ                   = %10000000
 
 W6552_WRITE .macro register, value
     lda #\value
@@ -64,6 +69,15 @@ W6552_SET_T1_MODE .macro mode
 W6552_SET_T1_COUNTER .macro value
     W6552_WRITE W6552_REG_T1CL, <\value
     W6552_WRITE W6552_REG_T1CH, >\value
+    .endm
+
+W6552_SET_T2_MODE .macro mode
+    W6552_WRITE_MASKED W6552_REG_ACR, \mode, W6552_T2_MODE_MASK
+    .endm
+
+W6552_SET_T2_COUNTER .macro value
+    W6552_WRITE W6552_REG_T2CL, <\value
+    W6552_WRITE W6552_REG_T2CH, >\value
     .endm
 
 W6552_ENABLE_INTERRUPTS .macro mask

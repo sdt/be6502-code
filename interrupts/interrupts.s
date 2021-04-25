@@ -3,17 +3,17 @@
     .include "hd44780.inc"
     .include "itoa.inc"
 
-    ZPW irq_count
-    ZPW last_irq_count
-    ZPW nmi_count
-    ZPW last_nmi_count
+    ZPW t1_count
+    ZPW last_t1_count
+    ZPW t2_count
+    ZPW last_t2_count
     ZPB do_update
 
 INCW .macro dest
     inc \dest+0
-    bne .no_carry
+    bne .no_carry\@
     inc \dest+1
-.no_carry:
+.no_carry\@:
     .endm
 
 CMP16 .macro lhs, rhs
@@ -39,36 +39,52 @@ STO16 .macro value, dest
     sta \dest+1
     .endm
 
-nmi_msg .string "NMI: "
-irq_msg .string "IRQ: "
-spaces  .string "    "
+t1_msg .string "Timer 1: "
+t2_msg .string "Timer 2: "
 
 nmi:
-    pha
-    INCW nmi_count
-    pla
     rti
 
 irq:
     pha
+    W6552_READ W6552_REG_IFR    ; load interrupt flags into A
+    asl a                       ; bit 6 is T1 flag
+    bmi .irq_t1
+    asl a                       ; bit 5 is T2 flag
+    bmi .irq_t2
+.irq_done:
+    pla
+    rti
+
+.irq_t1:
     W6552_ACK_T1        ; clear the IRQ
-    INCW irq_count
+    INCW t1_count
+    pla
+    rti
+
+.irq_t2:
+    W6552_SET_T2_COUNTER 10000  ; reloading the counter clears the IRQ
+    INCW t2_count
     pla
     rti
 
 start:
-    stz irq_count+0
-    stz irq_count+1
-    stz last_irq_count+0
-    stz last_irq_count+1
-    stz nmi_count+0
-    stz nmi_count+1
-    stz last_nmi_count+0
-    stz last_nmi_count+1
+    stz t1_count+0
+    stz t1_count+1
+    stz last_t1_count+0
+    stz last_t1_count+1
+    stz t2_count+0
+    stz t2_count+1
+    stz last_t2_count+0
+    stz last_t2_count+1
 
-    W6552_ENABLE_INTERRUPTS W6552_IER_T1
     W6552_SET_T1_MODE W6552_T1_MODE_CONTINUOUS
     W6552_SET_T1_COUNTER 10000
+
+    W6552_SET_T2_MODE W6552_T2_MODE_SINGLE_SHOT
+    W6552_SET_T2_COUNTER 10000
+
+    W6552_ENABLE_INTERRUPTS W6552_IER_T1|W6552_IER_T2
 
     jsr hd44780_init
     jsr update_display
@@ -78,17 +94,17 @@ loop:
     stz do_update
 
     sei
-    CMP16 irq_count, last_irq_count
+    CMP16 t1_count, last_t1_count
     beq irq_no_change
-    CPY16 irq_count, last_irq_count
+    CPY16 t1_count, last_t1_count
     inc do_update
 irq_no_change:
     cli
 
     sei
-    CMP16 nmi_count, last_nmi_count
+    CMP16 t2_count, last_t2_count
     beq nmi_no_change
-    CPY16 nmi_count, last_nmi_count
+    CPY16 t2_count, last_t2_count
     inc do_update
 nmi_no_change:
     cli
@@ -99,14 +115,14 @@ nmi_no_change:
     bra loop
 
 update_display:
-    HD44780_WRITE_STRING_AT irq_msg, 0, 0
-    CPY16 last_irq_count, itoa_in
+    HD44780_WRITE_STRING_AT t1_msg, 0, 0
+    CPY16 last_t1_count, itoa_in
     jsr itoa
     jsr pad_itoa_out
     HD44780_WRITE_STRING itoa_out
 
-    HD44780_WRITE_STRING_AT nmi_msg, 1, 0
-    CPY16 last_nmi_count, itoa_in
+    HD44780_WRITE_STRING_AT t2_msg, 1, 0
+    CPY16 last_t2_count, itoa_in
     jsr itoa
     jsr pad_itoa_out
     HD44780_WRITE_STRING itoa_out
