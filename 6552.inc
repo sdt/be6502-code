@@ -1,3 +1,6 @@
+    .ifndef seen_6552
+seen_6552 .equ 1
+
 ; Constant definitions for the 6552
 
 W6552_BASE      = $6000
@@ -21,3 +24,59 @@ W6552_REG_ORANH = W6552_BASE + 15
 W6552_REG_IRB   = W6552_REG_ORB
 W6552_REG_IRA   = W6552_REG_ORA
 W6552_REG_IRANH = W6552_REG_ORANH
+
+W6552_T1_MODE_MASK              = %11000000
+W6552_T1_MODE_SINGLE_SHOT       = %00000000
+W6552_T1_MODE_CONTINUOUS        = %01000000
+W6552_T1_MODE_SINGLE_SHOT_PB6   = %10000000
+W6552_T1_MODE_CONTINUOUS_PB6    = %11000000
+
+W6552_IER_ENABLE                = %10000000
+W6552_IER_DISABLE               = %00000000
+W6552_IER_CA2                   = %00000001
+W6552_IER_CA1                   = %00000010
+W6552_IER_SR                    = %00000100
+W6552_IER_CB2                   = %00001000
+W6552_IER_CB1                   = %00010000
+W6552_IER_T2                    = %00100000
+W6552_IER_T1                    = %01000000
+
+W6552_WRITE .macro register, value
+    lda #\value
+    sta \register
+    .endm
+
+W6552_READ .macro register
+    lda \register
+    .endm
+
+W6552_WRITE_MASKED .macro register, value, mask
+    lda \register
+    and #(\mask ^ $ff)
+    ora #\value
+    sta \register
+    .endm
+
+W6552_SET_T1_MODE .macro mode
+    W6552_WRITE_MASKED W6552_REG_ACR, \mode, W6552_T1_MODE_MASK
+    .endm
+
+W6552_SET_T1_COUNTER .macro value
+    W6552_WRITE W6552_REG_T1CL, <\value
+    W6552_WRITE W6552_REG_T1CH, >\value
+    .endm
+
+W6552_ENABLE_INTERRUPTS .macro mask
+    W6552_WRITE W6552_REG_IER, (\mask | W6552_IER_ENABLE)
+    .endm
+
+W6552_DISABLE_INTERRUPTS .macro mask
+    W6552_WRITE W6552_REG_IER, (\mask | W6552_IER_DISABLE)
+    .endm
+
+; Reading T1C-L clears the T1 interrupt flag
+W6552_ACK_T1 .macro
+    W6552_READ W6552_REG_T1CL
+    .endm
+
+    .endif ; seen_6552
