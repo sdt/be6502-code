@@ -1,3 +1,8 @@
+    .ifndef seen_hd44780
+seen_hd44780 .equ 1
+
+    .include "6552.inc"
+
 ; Macros and constants for the hd44780 lcd character display
 ; Requires 6552.inc
 
@@ -193,4 +198,4 @@ hd44780_init:
     HD44780_WRITE_REGISTER $0e ; display on, cursor on, blink off
     rts
 
-; vim: set filetype=asm:
+    .endif ; seen_hd44780
