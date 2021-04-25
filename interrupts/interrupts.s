@@ -51,6 +51,7 @@ nmi:
 
 irq:
     pha
+    W6552_ACK_T1        ; clear the IRQ
     INCW irq_count
     pla
     rti
@@ -64,6 +65,10 @@ start:
     stz nmi_count+1
     stz last_nmi_count+0
     stz last_nmi_count+1
+
+    W6552_ENABLE_INTERRUPTS W6552_IER_T1
+    W6552_SET_T1_MODE W6552_T1_MODE_CONTINUOUS
+    W6552_SET_T1_COUNTER 10000
 
     jsr hd44780_init
     jsr update_display
