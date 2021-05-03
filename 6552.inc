@@ -45,10 +45,25 @@ W6552_IER_CB1                   = %00010000
 W6552_IER_T2                    = %00100000
 W6552_IER_T1                    = %01000000
 W6552_IER_IRQ                   = %10000000
+W6552_IER_ALL                   = %01111111
+
+W6552_SR_MODE_MASK              = %00011100
+W6552_SR_MODE_DISABLED          = %00000000
+W6552_SR_MODE_IN_T2             = %00000100
+W6552_SR_MODE_IN_PHI2           = %00001000
+W6552_SR_MODE_IN_CB1            = %00001100
+W6552_SR_MODE_OUT_FREE          = %00010000
+W6552_SR_MODE_OUT_T2            = %00010100
+W6552_SR_MODE_OUT_PHI2          = %00011000
+W6552_SR_MODE_OUT_CB1           = %00011100
 
 W6552_WRITE .macro register, value
+        .ifeq \value
+    stz \register
+        .else
     lda #\value
     sta \register
+        .endif
     .endm
 
 W6552_READ .macro register
@@ -78,6 +93,10 @@ W6552_SET_T2_MODE .macro mode
 W6552_SET_T2_COUNTER .macro value
     W6552_WRITE W6552_REG_T2CL, <\value
     W6552_WRITE W6552_REG_T2CH, >\value
+    .endm
+
+W6552_SET_SR_MODE .macro mode
+    W6552_WRITE_MASKED W6552_REG_ACR, \mode, W6552_SR_MODE_MASK
     .endm
 
 W6552_ENABLE_INTERRUPTS .macro mask
