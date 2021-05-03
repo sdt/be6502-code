@@ -1,5 +1,5 @@
     .include "prelude.inc"
-    .include "6552.inc"
+    .include "6522.inc"
     .include "hd44780.inc"
     .include "itoa.inc"
 
@@ -47,7 +47,7 @@ nmi:
 
 irq:
     pha
-    W6552_READ W6552_REG_IFR    ; load interrupt flags into A
+    W6522_READ W6522_REG_IFR    ; load interrupt flags into A
     asl a                       ; bit 6 is T1 flag
     bmi .irq_t1
     asl a                       ; bit 5 is T2 flag
@@ -57,13 +57,13 @@ irq:
     rti
 
 .irq_t1:
-    W6552_ACK_T1        ; clear the IRQ
+    W6522_ACK_T1        ; clear the IRQ
     INCW t1_count
     pla
     rti
 
 .irq_t2:
-    W6552_SET_T2_COUNTER 10000  ; reloading the counter clears the IRQ
+    W6522_SET_T2_COUNTER 10000  ; reloading the counter clears the IRQ
     INCW t2_count
     pla
     rti
@@ -78,13 +78,13 @@ start:
     stz last_t2_count+0
     stz last_t2_count+1
 
-    W6552_SET_T1_MODE W6552_T1_MODE_CONTINUOUS
-    W6552_SET_T1_COUNTER 10000
+    W6522_SET_T1_MODE W6522_T1_MODE_CONTINUOUS
+    W6522_SET_T1_COUNTER 10000
 
-    W6552_SET_T2_MODE W6552_T2_MODE_SINGLE_SHOT
-    W6552_SET_T2_COUNTER 10000
+    W6522_SET_T2_MODE W6522_T2_MODE_SINGLE_SHOT
+    W6522_SET_T2_COUNTER 10000
 
-    W6552_ENABLE_INTERRUPTS W6552_IER_T1|W6552_IER_T2
+    W6522_ENABLE_INTERRUPTS W6522_IER_T1|W6522_IER_T2
 
     jsr hd44780_init
     jsr update_display

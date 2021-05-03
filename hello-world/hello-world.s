@@ -1,5 +1,5 @@
     .include "prelude.inc"
-    .include "6552.inc"
+    .include "6522.inc"
     .include "hd44780.inc"
 
                     ;0123456789abcdef
