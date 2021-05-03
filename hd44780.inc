@@ -188,7 +188,16 @@ hd44780_write_register:
     HD44780_SET_REGISTERS HD44780_WRITE, HD44780_REG_CTL
     ; Write the value onto the PB/data pins
     pla
-    jmp hd44780_write_value
+    bra hd44780_write_value
+
+hd44780_write_char:
+    pha
+    jsr hd44780_wait
+    ; Set hd44780 to write to registers
+    HD44780_SET_REGISTERS HD44780_WRITE, HD44780_REG_DATA
+    ; Write the value onto the PB/data pins
+    pla
+    bra hd44780_write_value
 
 hd44780_init:
     HD44780_INIT
