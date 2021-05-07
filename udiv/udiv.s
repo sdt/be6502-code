@@ -10,8 +10,8 @@ start:
 
     jsr div8
 
-end:
-    jmp end
+done:
+    jmp done
 
 ;   Q := 0                  -- Initialize quotient and remainder to zero
 ;   R := 0

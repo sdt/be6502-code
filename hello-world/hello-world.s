@@ -22,8 +22,8 @@ loop:
     HD44780_WRITE_STRING_AT msg3, 1, 0
 ;    jsr delay
     jmp loop
-end:
-    jmp end
+done:
+    jmp done
 
 delay:
     jsr .delay2
