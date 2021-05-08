@@ -23,6 +23,7 @@
 
     ZPB sr0
     ZPB sr1
+    ZPB scancode
     ZPB ifr ; must be zero page for BBR instructions
     ZPB cnt
 
@@ -42,6 +43,9 @@
 ; t=9   01110000  ; parity=0
 ; t=a   11100001  ; stop bit
 
+; 0438  0100 0011 1000
+;        SP 0001 1100 s   1c
+
 
 T2_COUNT = 11 - 1           ; one less because that's how t2 011 mode works
 
@@ -55,25 +59,26 @@ irq:
 
     ; Check SR interrupt for first 8 bits
     bbr W6552_IFR_BIT_SR, ifr, .not_sr_interrupt
-    ldx W6522_REG_SR            ; read SR (this resets the interrupt flag)
-    lda bit_reverse_table, x    ; flip the bits around the right way
+    lda W6522_REG_SR            ; read SR (this resets the interrupt flag)
     sta sr0                     ; store first byte into sr0
 .not_sr_interrupt:
 
     ; Check T2 interrupt for last 3 bits
     bbr W6552_IFR_BIT_T2, ifr, .not_t2_interrupt
     W6522_SET_T2_COUNTER T2_COUNT ; restart T2 timer (this resets the IRQ)
-    ldx W6522_REG_SR            ; read SR
+    lda W6522_REG_SR            ; read SR
+    ror a                       ; drop the stop bit
+    ror a                       ; drop the parity bit
+    ror a                       ; store the 8th bit in carry
+    lda sr0                     ; load the first byte
+    rol a                       ; rotate the carry bit back in
+    tax
+    lda bit_reverse_table, x    ; flip the bits around the right way
+    sta scancode
+
     W6522_SET_SR_MODE W6522_SR_MODE_DISABLED    ; reset SR count?
     W6522_SET_SR_MODE W6522_SR_MODE_IN_CB1      ; reset SR count?
     stz W6522_REG_SR                            ; reset SR count? nope
-    lda bit_reverse_table, x    ; flip the bits around the right way
-    lsr a
-    lsr a
-    lsr a
-    lsr a
-    lsr a
-    sta sr1                     ; store second byte into sr1
 .not_t2_interrupt:
 
     plx
@@ -86,13 +91,14 @@ irq:
 
 msg_sr0    .string "SR0: "
 msg_ifr    .string " IFR: "
-msg_sr1    .string "SR1: "
+msg_sr1    .string "SCD: "
 msg_cnt    .string " CNT: "
 
 start:
 
     stz sr0
     stz sr1
+    stz scancode
     stz ifr
     stz cnt
     jsr hd44780_init
@@ -119,7 +125,7 @@ loop:
     jsr write_hex_byte
 
     HD44780_WRITE_STRING_AT msg_sr1, 1, 0
-    lda sr1
+    lda scancode
     jsr write_hex_byte
 
     HD44780_WRITE_STRING msg_cnt
