@@ -43,12 +43,12 @@
 ; t=a   11100001  ; stop bit
 
 
+T2_COUNT = 11 - 1           ; one less because that's how t2 011 mode works
+
 
 irq:
     pha
     phx
-
-    inc cnt
 
     lda W6522_REG_IFR           ; load interrupt flags
     sta ifr                     ; save them in ifr for display
@@ -62,14 +62,24 @@ irq:
 
     ; Check T2 interrupt for last 3 bits
     bbr W6552_IFR_BIT_T2, ifr, .not_t2_interrupt
-    W6522_SET_T2_COUNTER 11     ; restart T2 timer (this resets the IRQ)
+    W6522_SET_T2_COUNTER T2_COUNT ; restart T2 timer (this resets the IRQ)
     ldx W6522_REG_SR            ; read SR
+    W6522_SET_SR_MODE W6522_SR_MODE_DISABLED    ; reset SR count?
+    W6522_SET_SR_MODE W6522_SR_MODE_IN_CB1      ; reset SR count?
+    stz W6522_REG_SR                            ; reset SR count? nope
     lda bit_reverse_table, x    ; flip the bits around the right way
+    lsr a
+    lsr a
+    lsr a
+    lsr a
+    lsr a
     sta sr1                     ; store second byte into sr1
 .not_t2_interrupt:
 
     plx
     pla
+    inc cnt
+
     rti
 
 ; 11 + 11 + 11 = 33 = 4 * 8 + 1
@@ -80,22 +90,23 @@ msg_sr1    .string "SR1: "
 msg_cnt    .string " CNT: "
 
 start:
-    ;W6522_SET_T2_MODE W6522_T2_MODE_COUNTDOWN_PB6
-    ;W6522_SET_T2_COUNTER 11     ; start=0,data*8,odd parity,stop=1
-
-    W6522_SET_SR_MODE W6522_SR_MODE_IN_CB1
-
-    W6522_DISABLE_INTERRUPTS W6522_IER_ALL
-    ;W6522_ENABLE_INTERRUPTS W6522_IER_SR | W6522_IER_T2
-    W6522_ENABLE_INTERRUPTS W6522_IER_SR
-    stz W6522_REG_IFR
-
-    jsr hd44780_init
 
     stz sr0
     stz sr1
     stz ifr
     stz cnt
+    jsr hd44780_init
+
+    W6522_DISABLE_INTERRUPTS W6522_IER_ALL
+    ;W6522_ENABLE_INTERRUPTS W6522_IER_SR
+
+    W6522_SET_SR_MODE W6522_SR_MODE_IN_CB1
+    W6522_SET_T2_MODE W6522_T2_MODE_COUNTDOWN_PB6
+    W6522_SET_T2_COUNTER T2_COUNT   ; start=0,data*8,odd parity,stop=1
+
+    stz W6522_REG_IFR
+    W6522_ENABLE_INTERRUPTS W6522_IER_SR | W6522_IER_T2
+    stz W6522_REG_SR                ; kick the shift register off
 
     cli     ; enable interrupts (I=0)
 loop:
@@ -116,7 +127,6 @@ loop:
     jsr write_hex_byte
 
     ;lda W6522_REG_SR
-
     bra loop
 
 ; Writes hex byte in A to lcd
