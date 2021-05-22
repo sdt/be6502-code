@@ -36,6 +36,15 @@ ZPW .macro symbol
     ZPDATA \symbol, 2
     .endm
 
+STORE .macro dest, value
+    .ifeq \value
+    stz \dest
+    .else
+    lda #\value
+    stz \dest
+    .endif
+    .endm
+
 ;------------------------------------------------------------------------------
 ; RAM variables. These start at $0200, and are wrapped in .dsect / .dend
 ; directives

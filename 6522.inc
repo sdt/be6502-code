@@ -81,8 +81,12 @@ W6522_READ .macro register
 
 W6522_WRITE_MASKED .macro register, value, mask
     lda \register
+    .if \value != \mask ; don't clear the bits if we set them all
     and #(\mask ^ $ff)
+    .endif
+    .if \value != 0 ; don't set the bits if none need to get set
     ora #\value
+    .endif
     sta \register
     .endm
 
