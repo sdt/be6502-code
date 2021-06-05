@@ -1,6 +1,8 @@
     .ifndef seen_ps2kbd
 seen_ps2kbd .equ 1
 
+    .include "bit-count.inc"
+
 ; PS2 keyboard bits come in lsb-first
 ;
 ; K0   = Start bit = 0
@@ -21,8 +23,10 @@ seen_ps2kbd .equ 1
 
     ZPB sr0
     ZPB sr1
-    ZPB scancode
-    ZPB ifr ; must be zero page for BBR instructions
+    ZPB scancode            ; also used for data out
+    ZPB scancode_parity     ; parity of written data
+    ZPB ifr                 ; must be zero page for BBR instructions
+    ZPB output_bits         ; 8 bits to write
     ZPB ps2kbd_state
 
 T2_COUNT = 11 - 1           ; one less because that's how t2 011 mode works
@@ -40,7 +44,7 @@ T2_COUNT = 11 - 1           ; one less because that's how t2 011 mode works
 ; t=7   00011100
 ;---
 ; t=8   00111000  ; 0xC,0x1
-; t=9   01110000  ; parity=0
+; t=9   01110000  ; 
 ; t=a   11100001  ; stop bit
 
 ; 0438  0100 0011 1000
@@ -72,17 +76,18 @@ PS2KBD_SET_STATE .macro name
     .endm
 
 ps2kbd_state_table:
-    PS2KBD_STATE PS2KBD_STATE_IDLE, ps2kbd_state_idle
-    PS2KBD_STATE PS2KBD_STATE_BEGIN_WRITE, ps2kbd_state_inhibit
-    PS2KBD_STATE PS2KBD_STATE_SEND_DATA_BITS, ps2kbd_state_send_data_bits
-    PS2KBD_STATE PS2KBD_STATE_SEND_PARITY_STOP, ps2kbd_state_send_parity_stop
+    PS2KBD_STATE PS2KBD_STATE_IDLE,             ps2kbd_state_idle
+    PS2KBD_STATE PS2KBD_STATE_WRITE_START_BIT,  ps2kbd_state_write_start_bit
+    PS2KBD_STATE PS2KBD_STATE_WRITE_DATA_BITS,  ps2kbd_state_write_data_bits
+    PS2KBD_STATE PS2KBD_STATE_WRITE_PARITY_BIT, ps2kbd_state_write_parity_bit
+    PS2KBD_STATE PS2KBD_STATE_WRITE_STOP_BIT,   ps2kbd_state_write_stop_bit
+    PS2KBD_STATE PS2KBD_STATE_DEVICE_ACK,       ps2kbd_state_device_ack
 
 ps2kbd_init:
     STORE sr0, 0
     STORE sr1, 0
     STORE scancode, 0
     STORE ifr, 0
-    PS2KBD_SET_STATE PS2KBD_STATE_BEGIN_WRITE
     bra ps2kbd_init_write
 
 ps2kbd_init_idle:
@@ -93,9 +98,19 @@ ps2kbd_init_idle:
     stz W6522_REG_IFR
     W6522_ENABLE_INTERRUPTS W6522_IER_SR | W6522_IER_T2
     stz W6522_REG_SR                ; kick the shift register off
+
+    PS2KBD_SET_STATE PS2KBD_STATE_IDLE
     rts
 
+; Call this to send a byte to the device. Data is in A register.
 ps2kbd_init_write:
+    sta scancode
+    jsr parity
+    eor #1 ; flip the bit for odd parity
+    sta scancode_parity
+    lda #8              ; 8 bits still to write
+    sta output_bits
+
     ; Disable SR, set T2 mode to internal single shot.
     W6522_SET_SR_MODE W6522_SR_MODE_DISABLED
     W6522_SET_T2_MODE W6522_T2_MODE_SINGLE_SHOT
@@ -107,12 +122,16 @@ ps2kbd_init_write:
     ; Set the T2 timer for >= 100us
     W6522_SET_T2_COUNTER 100
     W6522_ENABLE_INTERRUPTS W6522_IER_T2
+
+    ; Switch to begin write state
+    PS2KBD_SET_STATE PS2KBD_STATE_WRITE_START_BIT
     rts
 
 ps2kbd_fsm_step:
     ldx ps2kbd_state
     jmp (ps2kbd_state_table, x)
 
+; This is the default state, just waiting for the keyboard to send us data.
 ps2kbd_state_idle:
     ; Check SR interrupt for first 8 bits
     bbr W6552_IFR_BIT_SR, ifr, .not_sr_interrupt
@@ -139,63 +158,119 @@ ps2kbd_state_idle:
 .not_t2_interrupt:
     rts
 
-ps2kbd_state_inhibit:
+; We've pulled the clock pin low, and set the T2 timer for 100us.
+; When the T2 interrupt goes off, we write the start bit, and wait for the
+; device to start clocking in data.
+ps2kbd_state_write_start_bit:
     ; Check that it was in fact the T2 interrupt that went off.
     bbr W6552_IFR_BIT_T2, ifr, .not_t2_interrupt
 
-    ; pull the data pin low by writing 0's out of the shift register
-    ; This is the only way I can find to keep the data pin low after starting
-    ; the W6522_SR_MODE_OUT_CB1 below. I tried using the CB1 control to set
-    ; it low, but it seems a bit random what it does between that, and setting
-    ; the SR mode.
-    W6522_SET_SR_MODE W6522_SR_MODE_OUT_PHI2
-    lda #0
-    sta W6522_REG_SR                        ; write command to SR
+    ; Pull the data pin CB2 low.
+    W6522_SET_CB2_MODE W6522_CB2_MODE_LOW_OUT
 
-    lda W6522_REG_T2CL                  ; clear the T2 interrupt flag
-    W6522_DISABLE_INTERRUPTS W6522_IER_T2 ; and disable the T2 interrupt
-
-    PS2KBD_CLOCK_DDR PS2KBD_CLOCK_READ  ; release the clock pin (goes high)
-
-    W6522_SET_SR_MODE W6522_SR_MODE_OUT_CB1 ; set SR to output mode
-    lda #$77                                ; EE = ps/2 echo request (reversed)
-    sta W6522_REG_SR                        ; write command to SR
-    W6522_ENABLE_INTERRUPTS W6522_IER_SR    ; enable SR interrupt
-
-    PS2KBD_SET_STATE PS2KBD_STATE_SEND_DATA_BITS
-.not_t2_interrupt:
-    rts
-
-ps2kbd_state_send_data_bits:
-    ; Check that it was in fact the SR interrupt that went off.
-    bbr W6552_IFR_BIT_SR, ifr, .not_sr_interrupt
-    W6522_DISABLE_INTERRUPTS W6522_IER_SR   ; disable SR interrupt
-
-    ; We need to send two more data bits
-    W6522_SET_T2_MODE W6522_T2_MODE_COUNTDOWN_PB6
-    ;W6522_SET_T2_COUNTER 2 - 1              ; two (-1 for reasons)
-    W6522_SET_T2_COUNTER 1
-    W6522_ENABLE_INTERRUPTS W6522_IER_T2
-    lda #%11000000                          ; parity=1 & stop bit=1
-    sta W6522_REG_SR
-    PS2KBD_SET_STATE PS2KBD_STATE_SEND_PARITY_STOP
-.not_sr_interrupt:
-    rts
-
-ps2kbd_state_send_parity_stop:
-    ; Check that it was in fact the T2 interrupt that went off.
-    bbr W6552_IFR_BIT_T2, ifr, .not_t2_interrupt
-
-    W6522_SET_SR_MODE W6522_SR_MODE_DISABLED    ; stop shifting bits out
-    ;W6522_SET_CB2_MODE W6522_CB2_MODE_INPUT_FALLING
     lda W6522_REG_T2CL                      ; clear the T2 interrupt flag
     W6522_DISABLE_INTERRUPTS W6522_IER_T2   ; and disable the T2 interrupt
+
+    ; Set the CB1 interrupt to the rising edge = CLK falling edge
+    W6522_SET_CB1_MODE W6522_CB1_MODE_INPUT_RISING
+    W6522_ENABLE_INTERRUPTS W6522_IER_CB1   ; and enable the CB1 interrupt
+
+    PS2KBD_CLOCK_DDR PS2KBD_CLOCK_READ      ; release the clock pin (goes high)
+
+    ; Now wait for the device to start clocking in bits
+    PS2KBD_SET_STATE PS2KBD_STATE_WRITE_DATA_BITS
 .not_t2_interrupt:
     rts
+
+ps2kbd_state_write_data_bits:
+    ; Check that it was in fact the CB1 interrupt that went off.
+    bbr W6552_IFR_BIT_CB1, ifr, .not_cb1_interrupt
+
+    ; Clear the CB1 interrupt flag by reading ORB
+    cmp W6522_REG_ORB
+
+    ; Shift the low data bit into the carry flag, and write it to CB2
+    ror scancode
+    bcs .write_one
+.write_zero:
+    W6522_SET_CB2_MODE W6522_CB2_MODE_LOW_OUT
+    bra .write_done
+.write_one:
+    W6522_SET_CB2_MODE W6522_CB2_MODE_HIGH_OUT
+.write_done:
+
+    ; Decrement the counter, switch to the parity state if we hit zero
+    dec output_bits
+    bne .not_done
+    PS2KBD_SET_STATE PS2KBD_STATE_WRITE_PARITY_BIT
+.not_done:
+
+.not_cb1_interrupt:
+    rts
+
+ps2kbd_state_write_parity_bit:
+    ; Check that it was in fact the CB1 interrupt that went off.
+    bbr W6552_IFR_BIT_CB1, ifr, .not_cb1_interrupt
+
+    ; Clear the CB1 interrupt flag by reading ORB
+    cmp W6522_REG_ORB
+
+    ; Shift the parity bit into the carry flag, and write it to CB2
+    ror scancode_parity
+    bcs .write_one
+.write_zero:
+    W6522_SET_CB2_MODE W6522_CB2_MODE_LOW_OUT
+    bra .write_done
+.write_one:
+    W6522_SET_CB2_MODE W6522_CB2_MODE_HIGH_OUT
+.write_done:
+
+    ; Only one parity bit - switch to the write stop bit state
+    PS2KBD_SET_STATE PS2KBD_STATE_WRITE_STOP_BIT
+
+.not_cb1_interrupt:
+    rts
+
+ps2kbd_state_write_stop_bit:
+    ; Check that it was in fact the CB1 interrupt that went off.
+    bbr W6552_IFR_BIT_CB1, ifr, .not_cb1_interrupt
+
+    ; Clear the CB1 interrupt flag by reading ORB
+    cmp W6522_REG_ORB
+
+    ; Release the data pin - set CB2 to input mode
+    W6522_SET_CB2_MODE W6522_CB2_MODE_INPUT_FALLING
+
+    ; We only need to wait for the clock rising edge now, CB1 falling
+    W6522_SET_CB1_MODE W6522_CB1_MODE_INPUT_FALLING
+
+    ; Nearly done - switch to the write stop bit state
+    PS2KBD_SET_STATE PS2KBD_STATE_DEVICE_ACK
+
+.not_cb1_interrupt:
+    rts
+
+ps2kbd_state_device_ack:
+    ; Check that it was in fact the CB1 interrupt that went off.
+    bbr W6552_IFR_BIT_CB1, ifr, .not_cb1_interrupt
+
+    ; Clear the CB1 interrupt flag by reading ORB
+    cmp W6522_REG_ORB
+
+    ; No more CB1 interrupts needed. Disable them.
+    W6522_DISABLE_INTERRUPTS W6522_IER_CB1
+
+    ; And we're done - switch back to the idle state
+    jmp ps2kbd_init_idle
+
+.not_cb1_interrupt:
+    rts
+
+
 
 PS2KBD_IRQ_HANDLER .macro
     lda W6522_REG_IFR           ; load interrupt flags
-    sta ifr                     ; save them in ifr for display
+    sta ifr                     ; save them in ifr for bit tests
     jsr ps2kbd_fsm_step         ; call the fsm (so we have a return address)
     .endm
 
