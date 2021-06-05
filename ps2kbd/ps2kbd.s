@@ -27,6 +27,7 @@ msg_cnt    .string " CNT: "
 
 start:
     stz cnt
+    W6522_DISABLE_INTERRUPTS W6522_IER_ALL
 
     jsr hd44780_init
     jsr ps2kbd_init

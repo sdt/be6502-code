@@ -41,7 +41,7 @@ STORE .macro dest, value
     stz \dest
     .else
     lda #\value
-    stz \dest
+    sta \dest
     .endif
     .endm
 
