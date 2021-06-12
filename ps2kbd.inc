@@ -44,7 +44,7 @@ T2_COUNT = 11 - 1           ; one less because that's how t2 011 mode works
 ; t=7   00011100
 ;---
 ; t=8   00111000  ; 0xC,0x1
-; t=9   01110000  ; 
+; t=9   01110000  ;
 ; t=a   11100001  ; stop bit
 
 ; 0438  0100 0011 1000
@@ -88,6 +88,12 @@ ps2kbd_init:
     STORE sr1, 0
     STORE scancode, 0
     STORE ifr, 0
+    ;lda #$ee    ; ps2 echo command - should response with EE 1110-1110
+    ; f2 = 0100 1111
+    ;    : 0000 1001    ab = 1101 0101  83 = 1100 0001
+    ; 1011 0010
+    ; D
+    lda #$0f    ; ps2 read ID command - should respond with AB 83
     bra ps2kbd_init_write
 
 ps2kbd_init_idle:
@@ -152,6 +158,7 @@ ps2kbd_state_idle:
     lda bit_reverse_table, x    ; flip the bits around the right way
     sta scancode
 
+    ; TODO - sort this out
     W6522_SET_SR_MODE W6522_SR_MODE_DISABLED    ; reset SR count?
     W6522_SET_SR_MODE W6522_SR_MODE_IN_CB1      ; reset SR count?
     stz W6522_REG_SR                            ; reset SR count? nope
@@ -168,7 +175,6 @@ ps2kbd_state_write_start_bit:
     ; Pull the data pin CB2 low.
     W6522_SET_CB2_MODE W6522_CB2_MODE_LOW_OUT
 
-    lda W6522_REG_T2CL                      ; clear the T2 interrupt flag
     W6522_DISABLE_INTERRUPTS W6522_IER_T2   ; and disable the T2 interrupt
 
     ; Set the CB1 interrupt to the rising edge = CLK falling edge
@@ -179,15 +185,16 @@ ps2kbd_state_write_start_bit:
 
     ; Now wait for the device to start clocking in bits
     PS2KBD_SET_STATE PS2KBD_STATE_WRITE_DATA_BITS
+
+    lda W6522_REG_T2CL                      ; clear the T2 interrupt flag
 .not_t2_interrupt:
     rts
 
+; This is just way too slow. We need to have the data ready within 40us, but
+; we're setting it at 60us.
 ps2kbd_state_write_data_bits:
     ; Check that it was in fact the CB1 interrupt that went off.
     bbr W6552_IFR_BIT_CB1, ifr, .not_cb1_interrupt
-
-    ; Clear the CB1 interrupt flag by reading ORB
-    cmp W6522_REG_ORB
 
     ; Shift the low data bit into the carry flag, and write it to CB2
     ror scancode
@@ -204,6 +211,9 @@ ps2kbd_state_write_data_bits:
     bne .not_done
     PS2KBD_SET_STATE PS2KBD_STATE_WRITE_PARITY_BIT
 .not_done:
+
+    ; Clear the CB1 interrupt flag by reading ORB
+    cmp W6522_REG_ORB
 
 .not_cb1_interrupt:
     rts

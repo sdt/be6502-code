@@ -20,10 +20,10 @@ irq:
 
 ; 11 + 11 + 11 = 33 = 4 * 8 + 1
 
-msg_sr0    .string "SR0: "
-msg_ifr    .string " IFR: "
-msg_sr1    .string "SCD: "
-msg_cnt    .string " CNT: "
+msg_a .string "STA: "
+msg_b .string " IFR: "
+msg_c .string "SCD: "
+msg_d .string " CNT: "
 
 start:
     stz cnt
@@ -35,19 +35,19 @@ start:
     cli     ; enable interrupts (I=0)
 
 loop:
-    HD44780_WRITE_STRING_AT msg_sr0, 0, 0
-    lda sr0
+    HD44780_WRITE_STRING_AT msg_a, 0, 0
+    lda ps2kbd_state
     jsr write_hex_byte
 
-    HD44780_WRITE_STRING msg_ifr
+    HD44780_WRITE_STRING msg_b
     lda ifr
     jsr write_hex_byte
 
-    HD44780_WRITE_STRING_AT msg_sr1, 1, 0
+    HD44780_WRITE_STRING_AT msg_c, 1, 0
     lda scancode
     jsr write_hex_byte
 
-    HD44780_WRITE_STRING msg_cnt
+    HD44780_WRITE_STRING msg_d
     lda cnt
     jsr write_hex_byte
 
