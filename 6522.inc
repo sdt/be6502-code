@@ -47,14 +47,22 @@ W6522_IER_T1                    = %01000000
 W6522_IER_IRQ                   = %10000000
 W6522_IER_ALL                   = %01111111
 
-W6552_IFR_BIT_CA2               = 0
-W6552_IFR_BIT_CA1               = 1
-W6552_IFR_BIT_SR                = 2
-W6552_IFR_BIT_CB2               = 3
-W6552_IFR_BIT_CB1               = 4
-W6552_IFR_BIT_T2                = 5
-W6552_IFR_BIT_T1                = 6
-W6552_IFR_BIT_ANY               = 7
+W6522_IFR_CA2                   = W6522_IER_CA2
+W6522_IFR_CA1                   = W6522_IER_CA1
+W6522_IFR_SR                    = W6522_IER_SR
+W6522_IFR_CB2                   = W6522_IER_CB2
+W6522_IFR_CB1                   = W6522_IER_CB1
+W6522_IFR_T2                    = W6522_IER_T2
+W6522_IFR_T1                    = W6522_IER_T1
+
+W6522_IFR_BIT_CA2               = 0
+W6522_IFR_BIT_CA1               = 1
+W6522_IFR_BIT_SR                = 2
+W6522_IFR_BIT_CB2               = 3
+W6522_IFR_BIT_CB1               = 4
+W6522_IFR_BIT_T2                = 5
+W6522_IFR_BIT_T1                = 6
+W6522_IFR_BIT_ANY               = 7
 
 W6522_SR_MODE_MASK              = %00011100
 W6522_SR_MODE_DISABLED          = %00000000
