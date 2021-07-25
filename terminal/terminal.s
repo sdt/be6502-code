@@ -16,8 +16,27 @@ msg    .db "One two three\n"
 
 msg2 .ascii "All the way\nback to ..."
 
+    .dsect
+number .dw 0
+    .dend
+
 start:
     jsr term_init
+    lda #<10000
+    sta number+0
+    lda #>10000
+    sta number+1
+
+numloop:
+    TERM_WRITE_U16 number
+    lda #' '
+    jsr term_write_char
+    jsr delay
+    inc number+0
+    bne .no_carry
+    inc number+1
+.no_carry
+    bra numloop
 
     lda #0
 hexloop:

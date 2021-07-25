@@ -2,6 +2,7 @@
 seen_terminal .equ 1
 
     .include "hd44780.inc"
+    .include "itoa.inc"
 
     ZPB term_curs_col
     ZPB term_curs_row
@@ -40,8 +41,6 @@ term_write_string:
 .done:
     rts
 
-_hex_chars .db '0123456789abcdef'
-
 ; Write byte in A as hex.
 term_write_hex_byte:
     pha
@@ -54,8 +53,28 @@ term_write_hex_byte:
     and #%00001111
 .write_hex_nybble:
     tax
-    lda _hex_chars, x
+    lda .hex_chars, x
     jmp term_write_char
+
+.hex_chars .db '0123456789abcdef'
+
+TERM_WRITE_U16 .macro address
+    lda \address+0
+    sta itoa_in+0
+    lda \address+1
+    sta itoa_in+1
+    jsr itoa
+    ldx #0
+.write_digits:
+    lda itoa_out,x
+    beq .done
+    phx
+    jsr term_write_char
+    plx
+    inx
+    bra .write_digits
+.done:
+    .endm
 
 ; Ascii char to write is in A register.
 term_write_char:
