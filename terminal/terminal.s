@@ -14,20 +14,37 @@ msg    .db "One two three\n"
        .db "nineteen twenty\n"
        .db 0
 
+msg2 .ascii "All the way\nback to ..."
+
 start:
     jsr term_init
+    bra next
 
 again:
     ldy #0
 loop:
     lda msg,y
-    beq again
+    beq next
     iny
     phy
     jsr term_write_char
     ply
     jsr delay
     bra loop
+
+next:
+    TERM_WRITE_STRING msg2
+    jsr delay
+    jsr delay
+    jsr delay
+    jsr delay
+    jsr delay
+    jsr delay
+    jsr delay
+    jsr delay
+    lda #'\n'
+    jsr term_write_char
+    bra again
 
 done:
     jmp done

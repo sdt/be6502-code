@@ -16,6 +16,31 @@ term_init:
     lda #0
     jmp hd44780_set_row
 
+    ZPW term_string
+
+TERM_WRITE_STRING .macro address
+    lda #<\address
+    sta term_string
+    lda #>\address
+    sta term_string+1
+    jsr term_write_string
+    .endm
+
+term_write_string:
+    ldy #0
+.loop:
+    lda (term_string),y
+    beq .done      ; finished if we read a null
+    iny
+    phy
+    jsr term_write_char
+    ply
+    jmp .loop
+
+.done:
+    rts
+
+
 ; Ascii char to write is in A register.
 term_write_char:
     cmp #'\n'
@@ -33,7 +58,7 @@ term_write_char:
     sta term_curs_col
     rts
 
-.eol
+.eol:
     ; We've hit the end of the line. We want to wrap to the next line, but do we
     ; need to scroll?
     stz term_curs_col   ; in all cases, we're back to column zero
