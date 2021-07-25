@@ -13,8 +13,6 @@ HD44780_CTL_DDR    = W6522_REG_DDRB
 HD44780_CTL_OR     = W6522_REG_ORB
 HD44780_CTL_IR     = W6522_REG_IRB
 
-HD44780_ENABLE     = HD44780_CTL_PIN_E
-HD44780_DISABLE    = 0
 HD44780_READ       = HD44780_CTL_PIN_RW
 HD44780_WRITE      = 0
 HD44780_REG_DATA   = HD44780_CTL_PIN_RS
@@ -197,6 +195,58 @@ hd44780_write_char:
     ; Write the value onto the PB/data pins
     pla
     bra hd44780_write_value
+
+; Sets the cursor to column zero on the specified row.
+_row_cmd    .db $80 | $00, $80 | $40
+hd44780_set_row:
+    tax
+    lda _row_cmd, x
+    jmp hd44780_write_register
+
+HD44780_SET_CURSOR .macro row, col
+dram_cmd\@ = $80 | ($40 * \row) | \col
+    HD44780_WRITE_REGISTER dram_cmd\@
+    .endm
+
+    .dsect
+_hd44780_row_buffer .fill 16
+_hd44780_row_buffer_end .db 0
+    .dend
+
+; Row to read is in register A.
+; Reads to internal _hd44780_row_buffer.
+hd44780_read_row:
+    jsr hd44780_set_row
+    ldx #0
+.loop:
+    jsr hd44780_wait
+    HD44780_SET_DATA_READ
+    HD44780_SET_REGISTERS HD44780_READ, HD44780_REG_DATA
+    HD44780_ENABLE
+    lda HD44780_DATA_IR
+    sta _hd44780_row_buffer, x
+    HD44780_DISABLE
+    inx
+    cpx #16
+    bne .loop
+    rts
+
+_hd44780_clear_row .string "                "
+hd44780_scroll_up:
+    lda #1
+    jsr hd44780_read_row
+    lda #0
+    jsr hd44780_write_row
+    HD44780_WRITE_STRING_AT _hd44780_clear_row, 1, 0
+    rts
+
+; Row to write is in register A.
+; Writes from internal _hd44780_row_buffer.
+hd44780_write_row:
+    jsr hd44780_set_row
+    stz _hd44780_row_buffer_end
+    HD44780_WRITE_STRING _hd44780_row_buffer
+    rts
 
 hd44780_init:
     HD44780_INIT
