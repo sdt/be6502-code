@@ -18,6 +18,9 @@ term_init:
 
 ; Ascii char to write is in A register.
 term_write_char:
+    cmp #'\n'
+    beq .eol
+
     jsr hd44780_write_char
 
     ; See if we're at to the end of the line.

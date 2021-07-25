@@ -29,11 +29,12 @@ clean:
 #   -wdc02    - recognise WDC 65c02 instructions
 #   -dotdir   - directives start with a dot
 #   -chklabels- warn of label/opcode/directive name clashes
+#   -esc      - enable escape character sequences (\n etc)
 #   -wfail    - fail on warnings
 #   -L $*.lst - listing in $FILE.lst
 #   -o $@     - output to $FILE.bin
 %.bin : %.s
-	vasm -Fbin -pad=255 -wdc02 -I../ -dotdir -chklabels -wfail -L $*.lst -o $@ $<
+	vasm -Fbin -pad=255 -wdc02 -I../ -dotdir -chklabels -esc -wfail -L $*.lst -o $@ $<
 
 # Assemble to a "raw" srec file.
 #   -Fsrec    - SREC output file format
@@ -42,11 +43,12 @@ clean:
 #   -dotdir   - directives start with a dot
 #   -dotdir   - directives start with a dot
 #   -chklabels- warn of label/opcode/directive name clashes
+#   -esc      - enable escape character sequences (\n etc)
 #   -wfail    - fail on warnings
 #   -L $*.lst - listing in $FILE.lst
 #   -o $@     - output to $FILE.bin
 %.raw-srec : %.s
-	vasm -Fsrec -s19 -wdc02 -I../ -dotdir -chklabels -wfail -L $*.lst -o $@ $<
+	vasm -Fsrec -s19 -wdc02 -I../ -dotdir -chklabels -esc -wfail -L $*.lst -o $@ $<
 
 # Uncomment this to leave the raw-srec files behind
 #.PRECIOUS: %.raw-srec

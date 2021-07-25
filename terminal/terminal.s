@@ -1,8 +1,18 @@
     .include "prelude.inc"
     .include "terminal.inc"
 
-               ;0123456789abcdef0123456789abcdef
-msg    .string "One two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty"
+           ;0123456789abcdef
+msg    .db "One two three\n"
+       .db "four five six\n"
+       .db "seven eight nine"
+       .db "ten eleven\n"
+       .db "twelve thirteen\n"
+       .db "fourteen fifteen"
+       .db "sixteen\n"
+       .db "seventeen\n"
+       .db "eighteen\n"
+       .db "nineteen twenty\n"
+       .db 0
 
 start:
     jsr term_init
@@ -25,7 +35,7 @@ done:
 delay:
     phx
     phy
-    ldy #66
+    ldy #255
 .outer:
     ldx #255
 .inner:
