@@ -40,6 +40,22 @@ term_write_string:
 .done:
     rts
 
+_hex_chars .db '0123456789abcdef'
+
+; Write byte in A as hex.
+term_write_hex_byte:
+    pha
+    lsr
+    lsr
+    lsr
+    lsr
+    jsr .write_hex_nybble
+    pla
+    and #%00001111
+.write_hex_nybble:
+    tax
+    lda _hex_chars, x
+    jmp term_write_char
 
 ; Ascii char to write is in A register.
 term_write_char:

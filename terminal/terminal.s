@@ -18,7 +18,17 @@ msg2 .ascii "All the way\nback to ..."
 
 start:
     jsr term_init
-    bra next
+
+    lda #0
+hexloop:
+    pha
+    jsr term_write_hex_byte
+    lda #' '
+    jsr term_write_char
+    jsr delay
+    pla
+    ina
+    bne hexloop
 
 again:
     ldy #0
