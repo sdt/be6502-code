@@ -3,6 +3,7 @@ seen_ps2kbd .equ 1
 
     .include "6522.inc"
     .include "bit-count.inc"
+    .include "bit-reverse.inc"
 
 ; PS2 keyboard bits come in lsb-first
 ;
@@ -29,6 +30,13 @@ seen_ps2kbd .equ 1
     ZPB ifr                 ; must be zero page for BBR instructions
     ZPB output_bits         ; 8 bits to write
     ZPB ps2kbd_state
+
+    ZPB scancode_queue_write_cursor
+    ZPB scancode_queue_read_cursor
+
+    .dsect
+scancode_queue  reserve 256
+    .dend
 
 T2_COUNT = 11 - 1           ; one less because that's how t2 011 mode works
 
@@ -85,13 +93,13 @@ ps2kbd_init:
     STORE sr1, 0
     STORE scancode, 0
     STORE ifr, 0
+    STORE scancode_queue_write_cursor, 0
+    STORE scancode_queue_read_cursor, 0
     ;lda #$ee    ; ps2 echo command - should response with EE 1110-1110
     ; f2 = 0100 1111
     ;    : 0000 1001    ab = 1101 0101  83 = 1100 0001
     ; 1011 0010
     ; D
-    lda #$f2
-    jsr ps2kbd_send_byte_host_to_device
     jsr ps2kbd_init_idle
     rts
 
@@ -211,7 +219,7 @@ ps2kbd_send_byte_host_to_device:
 
 .ack:
     jsr ps2kbd_wait_for_rising_clock
-    rts
+    jmp ps2kbd_init_idle    ; return
 
 
 ps2kbd_fsm_step:
@@ -237,7 +245,10 @@ ps2kbd_state_idle:
     rol a                       ; rotate the carry bit back in
     tax
     lda bit_reverse_table, x    ; flip the bits around the right way
-    sta scancode
+    ldx scancode_queue_write_cursor
+    sta scancode_queue, x
+    inx
+    stx scancode_queue_write_cursor
 
     ; TODO - sort this out
     W6522_SET_SR_MODE W6522_SR_MODE_DISABLED    ; reset SR count?
