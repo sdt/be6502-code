@@ -48,7 +48,6 @@ KEY_EQUAL            = $2e ; = +
 KEY_LEFTBRACE        = $2f ; [ {
 KEY_RIGHTBRACE       = $30 ; ] }
 KEY_BACKSLASH        = $31 ; \ |
-KEY_HASHTILDE        = $32 ; Europe 1
 KEY_SEMICOLON        = $33 ; ; :
 KEY_APOSTROPHE       = $34 ; ' "
 KEY_GRAVE            = $35 ; ` ~
@@ -206,7 +205,7 @@ ps2kbd_standard_keycode:
     .db KEY_ENTER            ; $5a
     .db KEY_RIGHTBRACE       ; $5b
     .db 0                    ; $5c
-    .db KEY_HASHTILDE        ; $5d
+    .db KEY_BACKSLASH        ; $5d
     .db 0                    ; $5e
     .db 0                    ; $5f
     .db 0                    ; $60
@@ -728,7 +727,7 @@ ps2kbd_plain_ascii:
     .db    $38 ; $60 KEY_KP8
     .db    $39 ; $61 KEY_KP9
     .db    $30 ; $62 KEY_KP0
-    .db    0   ; $63
+    .db    $2e ; $63 KEY_KPDOT
     .db    0   ; $64
     .db    0   ; $65
     .db    0   ; $66
