@@ -8,7 +8,11 @@ ps2kbd_cmd_queue reserve 256
 
     ZPB ps2kbd_cmd_queue_write_cursor
     ZPB ps2kbd_cmd_queue_read_cursor
+    ZPB modifier_keys
 
+MOD_LEFTSHIFT   = %00000001
+MOD_RIGHTSHIFT  = %00000010
+MOD_SHIFT_MASK  = MOD_LEFTSHIFT | MOD_RIGHTSHIFT
 
 ; Command byte in A
 ps2kdb_enqueue_cmd:
@@ -64,6 +68,7 @@ irq:
 start:
     STORE ps2kbd_cmd_queue_write_cursor, 0
     STORE ps2kbd_cmd_queue_read_cursor, 0
+    STORE modifier_keys, 0
 
     W6522_DISABLE_INTERRUPTS W6522_IER_ALL
 
@@ -105,16 +110,63 @@ loop:
     beq loop
 
     lda scancode_queue, x
-    bmi .consume_key
+    bmi .process_break
+
+.process_make:
+
+    cmp #KEY_LEFTSHIFT
+    bne .not_leftshift
+    lda #MOD_LEFTSHIFT
+    bra .set_modifier
+.not_leftshift:
+
+    cmp #KEY_RIGHTSHIFT
+    bne .not_rightshift
+    lda #MOD_RIGHTSHIFT
+    bra .set_modifier
+.not_rightshift:
 
     tax
+    lda modifier_keys
+    and #MOD_SHIFT_MASK
+    bne .shifted
     lda ps2kbd_plain_ascii, x
+    bra .loaded
+.shifted:
+    lda ps2kbd_shifted_ascii, x
+.loaded
     bne .write_char
     lda #'?'
 .write_char:
     jsr term_write_char
+    bra .consume_key
+
+.process_break:
+    cmp #(KEY_LEFTSHIFT|$80)
+    bne .not_leftshift_break
+    lda #(~MOD_LEFTSHIFT)
+    bra .clear_modifier
+.not_leftshift_break:
+
+    cmp #(KEY_RIGHTSHIFT|$80)
+    bne .not_rightshift_break
+    lda #(~MOD_RIGHTSHIFT)
+    bra .clear_modifier
+.not_rightshift_break:
 
 .consume_key:
+    inc scancode_queue_read_cursor
+    bra loop
+
+.set_modifier:
+    ora modifier_keys
+    sta modifier_keys
+    inc scancode_queue_read_cursor
+    bra loop
+
+.clear_modifier:
+    and modifier_keys
+    sta modifier_keys
     inc scancode_queue_read_cursor
     bra loop
 
