@@ -90,6 +90,8 @@ PS2KBD_SET_STATE .macro name
 ps2kbd_state_table:
     PS2KBD_STATE    PS2KBD_STATE_STD,       ps2kbd_state_std
     PS2KBD_STATE    PS2KBD_STATE_STD_BRK,   ps2kbd_state_std_brk
+    PS2KBD_STATE    PS2KBD_STATE_EXT,       ps2kbd_state_ext
+    PS2KBD_STATE    PS2KBD_STATE_EXT_BRK,   ps2kbd_state_ext_brk
 
 ps2kbd_init:
     STORE sr0, 0
@@ -116,14 +118,29 @@ ps2kbd_init_idle:
 
 ; Assume that most recent scancode is in Y register
 ps2kbd_state_std:
-    cpy #$f0                        ; was is a break code?
+    cpy #$f0                        ; was it a break code?
     beq enter_ps2kbd_state_std_brk  ; -> enter std_brk state
+    cpy #$e0                        ; was it an extended code?
+    beq enter_ps2kbd_state_ext      ; -> enter ext_brk state
     lda ps2kbd_standard_keycode, y  ; load the keycode
     beq ps2kbd_scancode_error       ; handle error (keycode = 0)
     bra ps2kbd_emit_keycode         ; emit the make keycode
 
 ps2kbd_state_std_brk:
     lda ps2kbd_standard_keycode, y
+    beq ps2kbd_scancode_error
+    ora #$80
+    bra ps2kbd_emit_keycode         ; emit the make keycode
+
+ps2kbd_state_ext:
+    cpy #$f0                        ; was is a break code?
+    beq enter_ps2kbd_state_ext_brk  ; -> enter std_brk state
+    lda ps2kbd_extended_keycode, y  ; load the keycode
+    beq ps2kbd_scancode_error       ; handle error (keycode = 0)
+    bra ps2kbd_emit_keycode         ; emit the make keycode
+
+ps2kbd_state_ext_brk:
+    lda ps2kbd_extended_keycode, y
     beq ps2kbd_scancode_error
     ora #$80
     bra ps2kbd_emit_keycode         ; emit the make keycode
@@ -144,6 +161,14 @@ ps2kbd_scancode_error:
 
 enter_ps2kbd_state_std_brk:
     PS2KBD_SET_STATE PS2KBD_STATE_STD_BRK
+    rts
+
+enter_ps2kbd_state_ext:
+    PS2KBD_SET_STATE PS2KBD_STATE_EXT
+    rts
+
+enter_ps2kbd_state_ext_brk:
+    PS2KBD_SET_STATE PS2KBD_STATE_EXT_BRK
     rts
 
 ; Clear the mask in the IFR register, then wait for any of the mask bits to be

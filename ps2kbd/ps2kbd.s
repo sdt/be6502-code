@@ -110,6 +110,24 @@ loop:
     beq loop
 
     lda scancode_queue, x
+    pha
+    bmi .break
+.make:
+    lda #'D'
+    jsr term_write_char
+    lda #'n'
+    jsr term_write_char
+    pla
+    bra .write_char
+.break:
+    lda #'U'
+    jsr term_write_char
+    lda #'p'
+    jsr term_write_char
+    pla
+    and #$7f
+
+.write_char:
     jsr term_write_hex_byte
 
     inc scancode_queue_read_cursor
