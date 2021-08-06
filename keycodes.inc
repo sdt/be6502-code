@@ -48,7 +48,7 @@ KEY_EQUAL            = $2e ; = +
 KEY_LEFTBRACE        = $2f ; [ {
 KEY_RIGHTBRACE       = $30 ; ] }
 KEY_BACKSLASH        = $31 ; \ |
-KEY_HASHTILDE        = $32 ; Europe 1 (Note 2)
+KEY_HASHTILDE        = $32 ; Europe 1
 KEY_SEMICOLON        = $33 ; ; :
 KEY_APOSTROPHE       = $34 ; ' "
 KEY_GRAVE            = $35 ; ` ~
@@ -68,22 +68,22 @@ KEY_F9               = $42 ; F9
 KEY_F10              = $43 ; F10
 KEY_F11              = $44 ; F11
 KEY_F12              = $45 ; F12
-KEY_SYSRQ            = $46 ; Print Screen (Note 1)
+KEY_SYSRQ            = $46 ; Print Screen
 KEY_SCROLLLOCK       = $47 ; Scroll Lock
 KEY_BREAK            = $48 ; Break (Ctrl-Pause)
 KEY_PAUSE            = $48 ; Pause
-KEY_INSERT           = $49 ; Insert (Note 1)
-KEY_HOME             = $4a ; Home (Note 1)
-KEY_PAGEUP           = $4b ; Page Up (Note 1)
-KEY_DELETE           = $4c ; Delete (Note 1)
-KEY_END              = $4d ; End (Note 1)
-KEY_PAGEDOWN         = $4e ; Page Down (Note 1)
-KEY_RIGHT            = $4f ; Right Arrow (Note 1)
-KEY_LEFT             = $50 ; Left Arrow (Note 1)
-KEY_DOWN             = $51 ; Down Arrow (Note 1)
-KEY_UP               = $52 ; Up Arrow (Note 1)
+KEY_INSERT           = $49 ; Insert
+KEY_HOME             = $4a ; Home
+KEY_PAGEUP           = $4b ; Page Up
+KEY_DELETE           = $4c ; Delete
+KEY_END              = $4d ; End
+KEY_PAGEDOWN         = $4e ; Page Down
+KEY_RIGHT            = $4f ; Right Arrow
+KEY_LEFT             = $50 ; Left Arrow
+KEY_DOWN             = $51 ; Down Arrow
+KEY_UP               = $52 ; Up Arrow
 KEY_NUMLOCK          = $53 ; Num Lock
-KEY_KPSLASH          = $54 ; Keypad / (Note 1)
+KEY_KPSLASH          = $54 ; Keypad /
 KEY_KPASTERISK       = $55 ; Keypad *
 KEY_KPMINUS          = $56 ; Keypad -
 KEY_KPPLUS           = $57 ; Keypad +
@@ -99,7 +99,7 @@ KEY_KP8              = $60 ; Keypad 8 Up
 KEY_KP9              = $61 ; Keypad 9 PageUp
 KEY_KP0              = $62 ; Keypad 0 Insert
 KEY_KPDOT            = $63 ; Keypad . Delete
-KEY_102ND            = $64 ; Europe 2 (Note 2)
+KEY_102ND            = $64 ; Europe 2
 KEY_MENU             = $65 ; Menu
 KEY_POWER            = $66 ; Keyboard Power
 KEY_KPEQUAL          = $67 ; Keypad =
@@ -627,5 +627,521 @@ ps2kbd_extended_keycode:
     .db 0                    ; $fd
     .db 0                    ; $fe
     .db 0                    ; $ff
+
+ps2kbd_plain_ascii:
+    .db    0   ; $00
+    .db    0   ; $01
+    .db    0   ; $02
+    .db    0   ; $03
+    .db    $61 ; $04 KEY_A
+    .db    $62 ; $05 KEY_B
+    .db    $63 ; $06 KEY_C
+    .db    $64 ; $07 KEY_D
+    .db    $65 ; $08 KEY_E
+    .db    $66 ; $09 KEY_F
+    .db    $67 ; $0a KEY_G
+    .db    $68 ; $0b KEY_H
+    .db    $69 ; $0c KEY_I
+    .db    $6a ; $0d KEY_J
+    .db    $6b ; $0e KEY_K
+    .db    $6c ; $0f KEY_L
+    .db    $6d ; $10 KEY_M
+    .db    $6e ; $11 KEY_N
+    .db    $6f ; $12 KEY_O
+    .db    $70 ; $13 KEY_P
+    .db    $71 ; $14 KEY_Q
+    .db    $72 ; $15 KEY_R
+    .db    $73 ; $16 KEY_S
+    .db    $74 ; $17 KEY_T
+    .db    $75 ; $18 KEY_U
+    .db    $76 ; $19 KEY_V
+    .db    $77 ; $1a KEY_W
+    .db    $78 ; $1b KEY_X
+    .db    $79 ; $1c KEY_Y
+    .db    $7a ; $1d KEY_Z
+    .db    $31 ; $1e KEY_1
+    .db    $32 ; $1f KEY_2
+    .db    $33 ; $20 KEY_3
+    .db    $34 ; $21 KEY_4
+    .db    $35 ; $22 KEY_5
+    .db    $36 ; $23 KEY_6
+    .db    $37 ; $24 KEY_7
+    .db    $38 ; $25 KEY_8
+    .db    $39 ; $26 KEY_9
+    .db    $30 ; $27 KEY_0
+    .db    $0a ; $28 KEY_ENTER
+    .db    $1b ; $29 KEY_ESCAPE
+    .db    $08 ; $2a KEY_BACKSPACE
+    .db    $09 ; $2b KEY_TAB
+    .db    $20 ; $2c KEY_SPACE
+    .db    $2d ; $2d KEY_MINUS
+    .db    $3d ; $2e KEY_EQUAL
+    .db    $5b ; $2f KEY_LEFTBRACE
+    .db    $5d ; $30 KEY_RIGHTBRACE
+    .db    $5c ; $31 KEY_BACKSLASH
+    .db    0   ; $32
+    .db    $3b ; $33 KEY_SEMICOLON
+    .db    $27 ; $34 KEY_APOSTROPHE
+    .db    $60 ; $35 KEY_GRAVE
+    .db    $2c ; $36 KEY_COMMA
+    .db    $2e ; $37 KEY_DOT
+    .db    $2f ; $38 KEY_SLASH
+    .db    0   ; $39
+    .db    0   ; $3a
+    .db    0   ; $3b
+    .db    0   ; $3c
+    .db    0   ; $3d
+    .db    0   ; $3e
+    .db    0   ; $3f
+    .db    0   ; $40
+    .db    0   ; $41
+    .db    0   ; $42
+    .db    0   ; $43
+    .db    0   ; $44
+    .db    0   ; $45
+    .db    0   ; $46
+    .db    0   ; $47
+    .db    0   ; $48
+    .db    0   ; $49
+    .db    0   ; $4a
+    .db    0   ; $4b
+    .db    0   ; $4c
+    .db    0   ; $4d
+    .db    0   ; $4e
+    .db    0   ; $4f
+    .db    0   ; $50
+    .db    0   ; $51
+    .db    0   ; $52
+    .db    0   ; $53
+    .db    $2f ; $54 KEY_KPSLASH
+    .db    $2a ; $55 KEY_KPASTERISK
+    .db    $2d ; $56 KEY_KPMINUS
+    .db    $2b ; $57 KEY_KPPLUS
+    .db    $0a ; $58 KEY_KPENTER
+    .db    $31 ; $59 KEY_KP1
+    .db    $32 ; $5a KEY_KP2
+    .db    $33 ; $5b KEY_KP3
+    .db    $34 ; $5c KEY_KP4
+    .db    $35 ; $5d KEY_KP5
+    .db    $36 ; $5e KEY_KP6
+    .db    $37 ; $5f KEY_KP7
+    .db    $38 ; $60 KEY_KP8
+    .db    $39 ; $61 KEY_KP9
+    .db    $30 ; $62 KEY_KP0
+    .db    0   ; $63
+    .db    0   ; $64
+    .db    0   ; $65
+    .db    0   ; $66
+    .db    $3d ; $67 KEY_KPEQUAL
+    .db    0   ; $68
+    .db    0   ; $69
+    .db    0   ; $6a
+    .db    0   ; $6b
+    .db    0   ; $6c
+    .db    0   ; $6d
+    .db    0   ; $6e
+    .db    0   ; $6f
+    .db    0   ; $70
+    .db    0   ; $71
+    .db    0   ; $72
+    .db    0   ; $73
+    .db    0   ; $74
+    .db    0   ; $75
+    .db    0   ; $76
+    .db    0   ; $77
+    .db    0   ; $78
+    .db    0   ; $79
+    .db    0   ; $7a
+    .db    0   ; $7b
+    .db    0   ; $7c
+    .db    0   ; $7d
+    .db    0   ; $7e
+    .db    0   ; $7f
+    .db    0   ; $80
+    .db    0   ; $81
+    .db    0   ; $82
+    .db    0   ; $83
+    .db    0   ; $84
+    .db    0   ; $85
+    .db    0   ; $86
+    .db    0   ; $87
+    .db    0   ; $88
+    .db    0   ; $89
+    .db    0   ; $8a
+    .db    0   ; $8b
+    .db    0   ; $8c
+    .db    0   ; $8d
+    .db    0   ; $8e
+    .db    0   ; $8f
+    .db    0   ; $90
+    .db    0   ; $91
+    .db    0   ; $92
+    .db    0   ; $93
+    .db    0   ; $94
+    .db    0   ; $95
+    .db    0   ; $96
+    .db    0   ; $97
+    .db    0   ; $98
+    .db    0   ; $99
+    .db    0   ; $9a
+    .db    0   ; $9b
+    .db    0   ; $9c
+    .db    0   ; $9d
+    .db    0   ; $9e
+    .db    0   ; $9f
+    .db    0   ; $a0
+    .db    0   ; $a1
+    .db    0   ; $a2
+    .db    0   ; $a3
+    .db    0   ; $a4
+    .db    0   ; $a5
+    .db    0   ; $a6
+    .db    0   ; $a7
+    .db    0   ; $a8
+    .db    0   ; $a9
+    .db    0   ; $aa
+    .db    0   ; $ab
+    .db    0   ; $ac
+    .db    0   ; $ad
+    .db    0   ; $ae
+    .db    0   ; $af
+    .db    0   ; $b0
+    .db    0   ; $b1
+    .db    0   ; $b2
+    .db    0   ; $b3
+    .db    0   ; $b4
+    .db    0   ; $b5
+    .db    0   ; $b6
+    .db    0   ; $b7
+    .db    0   ; $b8
+    .db    0   ; $b9
+    .db    0   ; $ba
+    .db    0   ; $bb
+    .db    0   ; $bc
+    .db    0   ; $bd
+    .db    0   ; $be
+    .db    0   ; $bf
+    .db    0   ; $c0
+    .db    0   ; $c1
+    .db    0   ; $c2
+    .db    0   ; $c3
+    .db    0   ; $c4
+    .db    0   ; $c5
+    .db    0   ; $c6
+    .db    0   ; $c7
+    .db    0   ; $c8
+    .db    0   ; $c9
+    .db    0   ; $ca
+    .db    0   ; $cb
+    .db    0   ; $cc
+    .db    0   ; $cd
+    .db    0   ; $ce
+    .db    0   ; $cf
+    .db    0   ; $d0
+    .db    0   ; $d1
+    .db    0   ; $d2
+    .db    0   ; $d3
+    .db    0   ; $d4
+    .db    0   ; $d5
+    .db    0   ; $d6
+    .db    0   ; $d7
+    .db    0   ; $d8
+    .db    0   ; $d9
+    .db    0   ; $da
+    .db    0   ; $db
+    .db    0   ; $dc
+    .db    0   ; $dd
+    .db    0   ; $de
+    .db    0   ; $df
+    .db    0   ; $e0
+    .db    0   ; $e1
+    .db    0   ; $e2
+    .db    0   ; $e3
+    .db    0   ; $e4
+    .db    0   ; $e5
+    .db    0   ; $e6
+    .db    0   ; $e7
+    .db    0   ; $e8
+    .db    0   ; $e9
+    .db    0   ; $ea
+    .db    0   ; $eb
+    .db    0   ; $ec
+    .db    0   ; $ed
+    .db    0   ; $ee
+    .db    0   ; $ef
+    .db    0   ; $f0
+    .db    0   ; $f1
+    .db    0   ; $f2
+    .db    0   ; $f3
+    .db    0   ; $f4
+    .db    0   ; $f5
+    .db    0   ; $f6
+    .db    0   ; $f7
+    .db    0   ; $f8
+    .db    0   ; $f9
+    .db    0   ; $fa
+    .db    0   ; $fb
+    .db    0   ; $fc
+    .db    0   ; $fd
+    .db    0   ; $fe
+    .db    0   ; $ff
+
+ps2kbd_shifted_ascii:
+    .db    0   ; $00
+    .db    0   ; $01
+    .db    0   ; $02
+    .db    0   ; $03
+    .db    $41 ; $04 KEY_A
+    .db    $42 ; $05 KEY_B
+    .db    $43 ; $06 KEY_C
+    .db    $44 ; $07 KEY_D
+    .db    $45 ; $08 KEY_E
+    .db    $46 ; $09 KEY_F
+    .db    $47 ; $0a KEY_G
+    .db    $48 ; $0b KEY_H
+    .db    $49 ; $0c KEY_I
+    .db    $4a ; $0d KEY_J
+    .db    $4b ; $0e KEY_K
+    .db    $4c ; $0f KEY_L
+    .db    $4d ; $10 KEY_M
+    .db    $4e ; $11 KEY_N
+    .db    $4f ; $12 KEY_O
+    .db    $50 ; $13 KEY_P
+    .db    $51 ; $14 KEY_Q
+    .db    $52 ; $15 KEY_R
+    .db    $53 ; $16 KEY_S
+    .db    $54 ; $17 KEY_T
+    .db    $55 ; $18 KEY_U
+    .db    $56 ; $19 KEY_V
+    .db    $57 ; $1a KEY_W
+    .db    $58 ; $1b KEY_X
+    .db    $59 ; $1c KEY_Y
+    .db    $5a ; $1d KEY_Z
+    .db    $21 ; $1e KEY_1
+    .db    $40 ; $1f KEY_2
+    .db    $23 ; $20 KEY_3
+    .db    $24 ; $21 KEY_4
+    .db    $25 ; $22 KEY_5
+    .db    $5e ; $23 KEY_6
+    .db    $26 ; $24 KEY_7
+    .db    $2a ; $25 KEY_8
+    .db    $28 ; $26 KEY_9
+    .db    $29 ; $27 KEY_0
+    .db    0   ; $28
+    .db    0   ; $29
+    .db    0   ; $2a
+    .db    0   ; $2b
+    .db    0   ; $2c
+    .db    $5f ; $2d KEY_MINUS
+    .db    $2b ; $2e KEY_EQUAL
+    .db    $7b ; $2f KEY_LEFTBRACE
+    .db    $7d ; $30 KEY_RIGHTBRACE
+    .db    $7c ; $31 KEY_BACKSLASH
+    .db    0   ; $32
+    .db    $3a ; $33 KEY_SEMICOLON
+    .db    $22 ; $34 KEY_APOSTROPHE
+    .db    $7e ; $35 KEY_GRAVE
+    .db    $3c ; $36 KEY_COMMA
+    .db    $3e ; $37 KEY_DOT
+    .db    $3f ; $38 KEY_SLASH
+    .db    0   ; $39
+    .db    0   ; $3a
+    .db    0   ; $3b
+    .db    0   ; $3c
+    .db    0   ; $3d
+    .db    0   ; $3e
+    .db    0   ; $3f
+    .db    0   ; $40
+    .db    0   ; $41
+    .db    0   ; $42
+    .db    0   ; $43
+    .db    0   ; $44
+    .db    0   ; $45
+    .db    0   ; $46
+    .db    0   ; $47
+    .db    0   ; $48
+    .db    0   ; $49
+    .db    0   ; $4a
+    .db    0   ; $4b
+    .db    0   ; $4c
+    .db    0   ; $4d
+    .db    0   ; $4e
+    .db    0   ; $4f
+    .db    0   ; $50
+    .db    0   ; $51
+    .db    0   ; $52
+    .db    0   ; $53
+    .db    0   ; $54
+    .db    0   ; $55
+    .db    0   ; $56
+    .db    0   ; $57
+    .db    0   ; $58
+    .db    0   ; $59
+    .db    0   ; $5a
+    .db    0   ; $5b
+    .db    0   ; $5c
+    .db    0   ; $5d
+    .db    0   ; $5e
+    .db    0   ; $5f
+    .db    0   ; $60
+    .db    0   ; $61
+    .db    0   ; $62
+    .db    0   ; $63
+    .db    0   ; $64
+    .db    0   ; $65
+    .db    0   ; $66
+    .db    0   ; $67
+    .db    0   ; $68
+    .db    0   ; $69
+    .db    0   ; $6a
+    .db    0   ; $6b
+    .db    0   ; $6c
+    .db    0   ; $6d
+    .db    0   ; $6e
+    .db    0   ; $6f
+    .db    0   ; $70
+    .db    0   ; $71
+    .db    0   ; $72
+    .db    0   ; $73
+    .db    0   ; $74
+    .db    0   ; $75
+    .db    0   ; $76
+    .db    0   ; $77
+    .db    0   ; $78
+    .db    0   ; $79
+    .db    0   ; $7a
+    .db    0   ; $7b
+    .db    0   ; $7c
+    .db    0   ; $7d
+    .db    0   ; $7e
+    .db    0   ; $7f
+    .db    0   ; $80
+    .db    0   ; $81
+    .db    0   ; $82
+    .db    0   ; $83
+    .db    0   ; $84
+    .db    0   ; $85
+    .db    0   ; $86
+    .db    0   ; $87
+    .db    0   ; $88
+    .db    0   ; $89
+    .db    0   ; $8a
+    .db    0   ; $8b
+    .db    0   ; $8c
+    .db    0   ; $8d
+    .db    0   ; $8e
+    .db    0   ; $8f
+    .db    0   ; $90
+    .db    0   ; $91
+    .db    0   ; $92
+    .db    0   ; $93
+    .db    0   ; $94
+    .db    0   ; $95
+    .db    0   ; $96
+    .db    0   ; $97
+    .db    0   ; $98
+    .db    0   ; $99
+    .db    0   ; $9a
+    .db    0   ; $9b
+    .db    0   ; $9c
+    .db    0   ; $9d
+    .db    0   ; $9e
+    .db    0   ; $9f
+    .db    0   ; $a0
+    .db    0   ; $a1
+    .db    0   ; $a2
+    .db    0   ; $a3
+    .db    0   ; $a4
+    .db    0   ; $a5
+    .db    0   ; $a6
+    .db    0   ; $a7
+    .db    0   ; $a8
+    .db    0   ; $a9
+    .db    0   ; $aa
+    .db    0   ; $ab
+    .db    0   ; $ac
+    .db    0   ; $ad
+    .db    0   ; $ae
+    .db    0   ; $af
+    .db    0   ; $b0
+    .db    0   ; $b1
+    .db    0   ; $b2
+    .db    0   ; $b3
+    .db    0   ; $b4
+    .db    0   ; $b5
+    .db    0   ; $b6
+    .db    0   ; $b7
+    .db    0   ; $b8
+    .db    0   ; $b9
+    .db    0   ; $ba
+    .db    0   ; $bb
+    .db    0   ; $bc
+    .db    0   ; $bd
+    .db    0   ; $be
+    .db    0   ; $bf
+    .db    0   ; $c0
+    .db    0   ; $c1
+    .db    0   ; $c2
+    .db    0   ; $c3
+    .db    0   ; $c4
+    .db    0   ; $c5
+    .db    0   ; $c6
+    .db    0   ; $c7
+    .db    0   ; $c8
+    .db    0   ; $c9
+    .db    0   ; $ca
+    .db    0   ; $cb
+    .db    0   ; $cc
+    .db    0   ; $cd
+    .db    0   ; $ce
+    .db    0   ; $cf
+    .db    0   ; $d0
+    .db    0   ; $d1
+    .db    0   ; $d2
+    .db    0   ; $d3
+    .db    0   ; $d4
+    .db    0   ; $d5
+    .db    0   ; $d6
+    .db    0   ; $d7
+    .db    0   ; $d8
+    .db    0   ; $d9
+    .db    0   ; $da
+    .db    0   ; $db
+    .db    0   ; $dc
+    .db    0   ; $dd
+    .db    0   ; $de
+    .db    0   ; $df
+    .db    0   ; $e0
+    .db    0   ; $e1
+    .db    0   ; $e2
+    .db    0   ; $e3
+    .db    0   ; $e4
+    .db    0   ; $e5
+    .db    0   ; $e6
+    .db    0   ; $e7
+    .db    0   ; $e8
+    .db    0   ; $e9
+    .db    0   ; $ea
+    .db    0   ; $eb
+    .db    0   ; $ec
+    .db    0   ; $ed
+    .db    0   ; $ee
+    .db    0   ; $ef
+    .db    0   ; $f0
+    .db    0   ; $f1
+    .db    0   ; $f2
+    .db    0   ; $f3
+    .db    0   ; $f4
+    .db    0   ; $f5
+    .db    0   ; $f6
+    .db    0   ; $f7
+    .db    0   ; $f8
+    .db    0   ; $f9
+    .db    0   ; $fa
+    .db    0   ; $fb
+    .db    0   ; $fc
+    .db    0   ; $fd
+    .db    0   ; $fe
+    .db    0   ; $ff
 
     .endif ; seen_keycodes
