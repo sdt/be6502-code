@@ -2,8 +2,6 @@
     .include "ps2kbd.inc"
     .include "terminal.inc"
 
-    ZPB cnt
-
     .dsect
 ps2kbd_cmd_queue reserve 256
     .dend
@@ -54,7 +52,7 @@ irq:
     phx
     phy
 
-    PS2KBD_IRQ_HANDLER
+    jsr ps2kbd_irq_handler
 
     ply
     plx
@@ -64,7 +62,6 @@ irq:
 ; 11 + 11 + 11 = 33 = 4 * 8 + 1
 
 start:
-    STORE cnt, 0
     STORE ps2kbd_cmd_queue_write_cursor, 0
     STORE ps2kbd_cmd_queue_read_cursor, 0
 

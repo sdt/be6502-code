@@ -25,7 +25,6 @@ seen_ps2kbd .equ 1
 ; t=10  3456789A    ; T2 interrupt fires - reload T2 counter resets this
 
     ZPB sr0
-    ZPB sr1
     ZPB scancode            ; also used for data out
     ZPB scancode_parity     ; parity of written data
     ZPB ifr                 ; must be zero page for BBR instructions
@@ -97,7 +96,6 @@ ps2kbd_state_table:
 
 ps2kbd_init:
     STORE sr0, 0
-    STORE sr1, 0
     STORE scancode, 0
     STORE scancode_errors, 0
     STORE ifr, 0
@@ -312,12 +310,8 @@ ps2kbd_send_byte_host_to_device:
     jsr ps2kbd_wait_for_rising_clock
     jmp ps2kbd_init_idle    ; return
 
-ps2kbd_fsm_step:
-    ldx ps2kbd_state
-    jmp (ps2kbd_state_table, x)
-
-; Include this in your IRQ handler. Trashes A, X and Y.
-PS2KBD_IRQ_HANDLER .macro
+; Call this in your IRQ handler. Trashes A, X and Y.
+ps2kbd_irq_handler:
     lda W6522_REG_IFR           ; load interrupt flags
     sta ifr                     ; save them in ifr for bit tests
 
@@ -340,12 +334,15 @@ PS2KBD_IRQ_HANDLER .macro
     ldy bit_reverse_table, x    ; flip the bits around the right way
 
     jsr ps2kbd_fsm_step
-
-    ; TODO - sort this out
+    ; Reset SR - we seem to need all three of these
     W6522_SET_SR_MODE W6522_SR_MODE_DISABLED    ; reset SR count?
     W6522_SET_SR_MODE W6522_SR_MODE_IN_CB1      ; reset SR count?
     stz W6522_REG_SR                            ; reset SR count? nope
 .not_t2_interrupt:
-    .endm
+    rts
+
+ps2kbd_fsm_step:
+    ldx ps2kbd_state
+    jmp (ps2kbd_state_table, x)
 
     .endif ; seen_ps2kbd
