@@ -90,8 +90,10 @@ PS2KBD_SET_STATE .macro name
 ps2kbd_state_table:
     PS2KBD_STATE    PS2KBD_STATE_STD,       ps2kbd_state_std
     PS2KBD_STATE    PS2KBD_STATE_STD_BRK,   ps2kbd_state_std_brk
-    PS2KBD_STATE    PS2KBD_STATE_EXT,       ps2kbd_state_ext
-    PS2KBD_STATE    PS2KBD_STATE_EXT_BRK,   ps2kbd_state_ext_brk
+    PS2KBD_STATE    PS2KBD_STATE_EXT0,      ps2kbd_state_ext0
+    PS2KBD_STATE    PS2KBD_STATE_EXT0_BRK,  ps2kbd_state_ext0_brk
+    PS2KBD_STATE    PS2KBD_STATE_EXT1,      ps2kbd_state_ext1
+    PS2KBD_STATE    PS2KBD_STATE_EXT1_BRK,  ps2kbd_state_ext1_brk
 
 ps2kbd_init:
     STORE sr0, 0
@@ -120,8 +122,10 @@ ps2kbd_init_idle:
 ps2kbd_state_std:
     cpy #$f0                        ; was it a break code?
     beq enter_ps2kbd_state_std_brk  ; -> enter std_brk state
-    cpy #$e0                        ; was it an extended code?
-    beq enter_ps2kbd_state_ext      ; -> enter ext_brk state
+    cpy #$e0                        ; was it an ext0 code?
+    beq enter_ps2kbd_state_ext0     ; -> enter ext0 state
+    cpy #$e1                        ; was it an ext1 code?
+    beq enter_ps2kbd_state_ext1     ; -> enter ext1 state
     lda ps2kbd_standard_keycode, y  ; load the keycode
     beq ps2kbd_scancode_error       ; handle error (keycode = 0)
     bra ps2kbd_emit_keycode         ; emit the make keycode
@@ -132,22 +136,40 @@ ps2kbd_state_std_brk:
     ora #$80
     bra ps2kbd_emit_keycode         ; emit the make keycode
 
-ps2kbd_state_ext:
+ps2kbd_state_ext0:
     cpy #$f0                        ; was is a break code?
-    beq enter_ps2kbd_state_ext_brk  ; -> enter std_brk state
+    beq enter_ps2kbd_state_ext0_brk  ; -> enter std_brk state
     cpy #$12                        ; was it the weird numlock/shift thing?
     beq enter_ps2kbd_state_std      ; --> ignore it
     lda ps2kbd_extended_keycode, y  ; load the keycode
     beq ps2kbd_scancode_error       ; handle error (keycode = 0)
     bra ps2kbd_emit_keycode         ; emit the make keycode
 
-ps2kbd_state_ext_brk:
+ps2kbd_state_ext0_brk:
     cpy #$12                        ; was it the weird numlock/shift thing?
     beq enter_ps2kbd_state_std      ; --> ignore it
     lda ps2kbd_extended_keycode, y
     beq ps2kbd_scancode_error
     ora #$80
     bra ps2kbd_emit_keycode         ; emit the make keycode
+
+ps2kbd_state_ext1:
+    cpy #$f0                        ; was is a break code?
+    beq enter_ps2kbd_state_ext1_brk ; -> enter std_brk state
+    cpy #$14                        ; was it the 14 in the middle?
+    beq ps2kbd_ignore               ; -> ignore it
+    cpy #$77                        ; was it the final 77?
+    bne ps2kbd_scancode_error       ; -> if not error
+    lda #KEY_PAUSE
+    bra ps2kbd_emit_keycode         ; emit the make keycode for pause
+
+ps2kbd_state_ext1_brk:
+    cpy #$14                        ; was it the 14 in the middle?
+    beq enter_ps2kbd_state_ext1     ; -> ignore it
+    cpy #$77                        ; was it the final 77?
+    bne ps2kbd_scancode_error       ; -> if not error
+    lda #(KEY_PAUSE | $80)
+    bra ps2kbd_emit_keycode         ; emit the break keycode for pause
 
 ; Keycode is in A
 ps2kbd_emit_keycode:
@@ -156,6 +178,7 @@ ps2kbd_emit_keycode:
     inx
     stx scancode_queue_write_cursor
     PS2KBD_SET_STATE PS2KBD_STATE_STD   ; revert to the std stte
+ps2kbd_ignore:
     rts
 
 ps2kbd_scancode_error:
@@ -168,12 +191,20 @@ enter_ps2kbd_state_std_brk:
     PS2KBD_SET_STATE PS2KBD_STATE_STD_BRK
     rts
 
-enter_ps2kbd_state_ext:
-    PS2KBD_SET_STATE PS2KBD_STATE_EXT
+enter_ps2kbd_state_ext0:
+    PS2KBD_SET_STATE PS2KBD_STATE_EXT0
     rts
 
-enter_ps2kbd_state_ext_brk:
-    PS2KBD_SET_STATE PS2KBD_STATE_EXT_BRK
+enter_ps2kbd_state_ext0_brk:
+    PS2KBD_SET_STATE PS2KBD_STATE_EXT0_BRK
+    rts
+
+enter_ps2kbd_state_ext1:
+    PS2KBD_SET_STATE PS2KBD_STATE_EXT1
+    rts
+
+enter_ps2kbd_state_ext1_brk:
+    PS2KBD_SET_STATE PS2KBD_STATE_EXT1_BRK
     rts
 
 ; Clear the mask in the IFR register, then wait for any of the mask bits to be
