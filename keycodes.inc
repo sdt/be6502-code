@@ -100,9 +100,17 @@ KEY_KP9              = $61 ; Keypad 9 PageUp
 KEY_KP0              = $62 ; Keypad 0 Insert
 KEY_KPDOT            = $63 ; Keypad . Delete
 KEY_102ND            = $64 ; Europe 2 (Note 2)
-KEY_COMPOSE          = $65 ; App
+KEY_MENU             = $65 ; Menu
 KEY_POWER            = $66 ; Keyboard Power
 KEY_KPEQUAL          = $67 ; Keypad =
+KEY_LEFTCTRL         = $68 ; Left Control
+KEY_LEFTSHIFT        = $69 ; Left Shift
+KEY_LEFTALT          = $6a ; Left Alt
+KEY_LEFTWIN          = $6b ; Left Windows
+KEY_RIGHTCTRL        = $6c ; Right Control
+KEY_RIGHTSHIFT       = $6d ; Right Shift
+KEY_RIGHTALT         = $6e ; Right Alt
+KEY_RIGHTWIN         = $6f ; Right Windows
 
 ps2kbd_standard_keycode:
     .db 0                    ; $00
@@ -122,10 +130,10 @@ ps2kbd_standard_keycode:
     .db KEY_GRAVE            ; $0e
     .db KEY_KPEQUAL          ; $0f
     .db 0                    ; $10
-    .db 0                    ; $11
-    .db 0                    ; $12
+    .db KEY_LEFTALT          ; $11
+    .db KEY_LEFTSHIFT        ; $12
     .db 0                    ; $13
-    .db 0                    ; $14
+    .db KEY_LEFTCTRL         ; $14
     .db KEY_Q                ; $15
     .db KEY_1                ; $16
     .db 0                    ; $17
@@ -194,7 +202,7 @@ ps2kbd_standard_keycode:
     .db 0                    ; $56
     .db 0                    ; $57
     .db KEY_CAPSLOCK         ; $58
-    .db 0                    ; $59
+    .db KEY_RIGHTSHIFT       ; $59
     .db KEY_ENTER            ; $5a
     .db KEY_RIGHTBRACE       ; $5b
     .db 0                    ; $5c
@@ -380,10 +388,10 @@ ps2kbd_extended_keycode:
     .db 0                    ; $0e
     .db 0                    ; $0f
     .db 0                    ; $10
-    .db 0                    ; $11
+    .db KEY_RIGHTALT         ; $11
     .db 0                    ; $12
     .db 0                    ; $13
-    .db 0                    ; $14
+    .db KEY_RIGHTCTRL        ; $14
     .db 0                    ; $15
     .db 0                    ; $16
     .db 0                    ; $17
@@ -394,7 +402,7 @@ ps2kbd_extended_keycode:
     .db 0                    ; $1c
     .db 0                    ; $1d
     .db 0                    ; $1e
-    .db 0                    ; $1f
+    .db KEY_LEFTWIN          ; $1f
     .db 0                    ; $20
     .db 0                    ; $21
     .db 0                    ; $22
@@ -402,7 +410,7 @@ ps2kbd_extended_keycode:
     .db 0                    ; $24
     .db 0                    ; $25
     .db 0                    ; $26
-    .db 0                    ; $27
+    .db KEY_RIGHTWIN         ; $27
     .db 0                    ; $28
     .db 0                    ; $29
     .db 0                    ; $2a
@@ -410,7 +418,7 @@ ps2kbd_extended_keycode:
     .db 0                    ; $2c
     .db 0                    ; $2d
     .db 0                    ; $2e
-    .db KEY_COMPOSE          ; $2f
+    .db KEY_MENU             ; $2f
     .db 0                    ; $30
     .db 0                    ; $31
     .db 0                    ; $32
