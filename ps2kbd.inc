@@ -4,6 +4,7 @@ seen_ps2kbd .equ 1
     .include "6522.inc"
     .include "bit-count.inc"
     .include "bit-reverse.inc"
+    .include "keycodes.inc"
 
 ; PS2 keyboard bits come in lsb-first
 ;
@@ -85,8 +86,8 @@ PS2KBD_SET_STATE .macro name
     STORE ps2kbd_state, \name
     .endm
 
-ps2kbd_state_table:
-    PS2KBD_STATE PS2KBD_STATE_IDLE,             ps2kbd_state_idle
+;ps2kbd_state_table:
+    ;PS2KBD_STATE PS2KBD_STATE_IDLE,             ps2kbd_state_idle
 
 ps2kbd_init:
     STORE sr0, 0
@@ -95,13 +96,8 @@ ps2kbd_init:
     STORE ifr, 0
     STORE scancode_queue_write_cursor, 0
     STORE scancode_queue_read_cursor, 0
-    ;lda #$ee    ; ps2 echo command - should response with EE 1110-1110
-    ; f2 = 0100 1111
-    ;    : 0000 1001    ab = 1101 0101  83 = 1100 0001
-    ; 1011 0010
-    ; D
-    jsr ps2kbd_init_idle
-    rts
+
+    ; Fall through to ps2kbd_init_idle
 
 ps2kbd_init_idle:
     W6522_SET_SR_MODE W6522_SR_MODE_IN_CB1
@@ -112,7 +108,6 @@ ps2kbd_init_idle:
     W6522_ENABLE_INTERRUPTS W6522_IER_SR | W6522_IER_T2
     stz W6522_REG_SR                ; kick the shift register off
 
-    PS2KBD_SET_STATE PS2KBD_STATE_IDLE
     rts
 
 
@@ -222,12 +217,15 @@ ps2kbd_send_byte_host_to_device:
     jmp ps2kbd_init_idle    ; return
 
 
-ps2kbd_fsm_step:
-    ldx ps2kbd_state
-    jmp (ps2kbd_state_table, x)
+;ps2kbd_fsm_step:
+    ;ldx ps2kbd_state
+    ;jmp (ps2kbd_state_table, x)
 
-; This is the default state, just waiting for the keyboard to send us data.
-ps2kbd_state_idle:
+; Include this in your IRQ handler. Trashes A and X.
+PS2KBD_IRQ_HANDLER .macro
+    lda W6522_REG_IFR           ; load interrupt flags
+    sta ifr                     ; save them in ifr for bit tests
+
     ; Check SR interrupt for first 8 bits
     bbr W6522_IFR_BIT_SR, ifr, .not_sr_interrupt
     lda W6522_REG_SR            ; read SR (this resets the interrupt flag)
@@ -255,12 +253,6 @@ ps2kbd_state_idle:
     W6522_SET_SR_MODE W6522_SR_MODE_IN_CB1      ; reset SR count?
     stz W6522_REG_SR                            ; reset SR count? nope
 .not_t2_interrupt:
-    rts
-
-PS2KBD_IRQ_HANDLER .macro
-    lda W6522_REG_IFR           ; load interrupt flags
-    sta ifr                     ; save them in ifr for bit tests
-    jsr ps2kbd_fsm_step         ; call the fsm (so we have a return address)
     .endm
 
     .endif ; seen_ps2kbd
