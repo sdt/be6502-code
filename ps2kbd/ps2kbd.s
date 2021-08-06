@@ -52,9 +52,11 @@ ps2kbd_process_cmd_queue:
 irq:
     pha
     phx
+    phy
 
     PS2KBD_IRQ_HANDLER
 
+    ply
     plx
     pla
     rti
@@ -77,10 +79,10 @@ start:
 ;    jsr ps2kdb_enqueue_cmd
 ;    lda #$02
 ;    jsr ps2kdb_enqueue_cmd
-    lda #$f0
-    jsr ps2kdb_enqueue_cmd
-    lda #$00
-    jsr ps2kdb_enqueue_cmd
+;    lda #$f0
+;    jsr ps2kdb_enqueue_cmd
+;    lda #$00
+;    jsr ps2kdb_enqueue_cmd
 ;    lda #$ed
 ;    jsr ps2kdb_enqueue_cmd
 ;    lda #$ed
@@ -93,32 +95,24 @@ start:
 ;    jsr ps2kdb_enqueue_cmd
 ;
 loop:
+    lda scancode_errors
+    beq .no_errors
+    dec scancode_errors
+    lda #'X'
+    jsr term_write_char
+    lda #'X'
+    jsr term_write_char
+    bra loop
+
+.no_errors:
     ldx scancode_queue_read_cursor
     cpx scancode_queue_write_cursor
     beq loop
 
     lda scancode_queue, x
-    pha
     jsr term_write_hex_byte
 
     inc scancode_queue_read_cursor
-
-    pla
-    cmp #$fa
-    bne .not_fa
-
-    ; ACK received from keyboard. Consume the last byte sent, and send another.
-    inc ps2kbd_cmd_queue_read_cursor
-    jsr ps2kbd_process_cmd_queue
-    bra loop
-
-.not_fa:
-    cmp #$fe
-    bne .not_fe
-    ; RESEND - resend the last command
-    jsr ps2kbd_process_cmd_queue
-
-.not_fe:
     bra loop
 
     .include "vectors.inc"

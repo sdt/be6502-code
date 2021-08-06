@@ -36,7 +36,8 @@ seen_ps2kbd .equ 1
     ZPB scancode_queue_read_cursor
 
     .dsect
-scancode_queue  reserve 256
+scancode_queue  .reserve 256
+scancode_errors .db 0
     .dend
 
 T2_COUNT = 11 - 1           ; one less because that's how t2 011 mode works
@@ -86,16 +87,19 @@ PS2KBD_SET_STATE .macro name
     STORE ps2kbd_state, \name
     .endm
 
-;ps2kbd_state_table:
-    ;PS2KBD_STATE PS2KBD_STATE_IDLE,             ps2kbd_state_idle
+ps2kbd_state_table:
+    PS2KBD_STATE    PS2KBD_STATE_STD,       ps2kbd_state_std
+    PS2KBD_STATE    PS2KBD_STATE_STD_BRK,   ps2kbd_state_std_brk
 
 ps2kbd_init:
     STORE sr0, 0
     STORE sr1, 0
     STORE scancode, 0
+    STORE scancode_errors, 0
     STORE ifr, 0
     STORE scancode_queue_write_cursor, 0
     STORE scancode_queue_read_cursor, 0
+    PS2KBD_SET_STATE PS2KBD_STATE_STD
 
     ; Fall through to ps2kbd_init_idle
 
@@ -110,6 +114,37 @@ ps2kbd_init_idle:
 
     rts
 
+; Assume that most recent scancode is in Y register
+ps2kbd_state_std:
+    cpy #$f0                        ; was is a break code?
+    beq enter_ps2kbd_state_std_brk  ; -> enter std_brk state
+    lda ps2kbd_standard_keycode, y  ; load the keycode
+    beq ps2kbd_scancode_error       ; handle error (keycode = 0)
+    bra ps2kbd_emit_keycode         ; emit the make keycode
+
+ps2kbd_state_std_brk:
+    lda ps2kbd_standard_keycode, y
+    beq ps2kbd_scancode_error
+    ora #$80
+    bra ps2kbd_emit_keycode         ; emit the make keycode
+
+; Keycode is in A
+ps2kbd_emit_keycode:
+    ldx scancode_queue_write_cursor
+    sta scancode_queue, x
+    inx
+    stx scancode_queue_write_cursor
+    PS2KBD_SET_STATE PS2KBD_STATE_STD   ; revert to the std stte
+    rts
+
+ps2kbd_scancode_error:
+    inc scancode_errors                 ; "log" the error
+    PS2KBD_SET_STATE PS2KBD_STATE_STD   ; revert to the std state
+    rts
+
+enter_ps2kbd_state_std_brk:
+    PS2KBD_SET_STATE PS2KBD_STATE_STD_BRK
+    rts
 
 ; Clear the mask in the IFR register, then wait for any of the mask bits to be
 ; set. Then clear it again.
@@ -216,12 +251,11 @@ ps2kbd_send_byte_host_to_device:
     jsr ps2kbd_wait_for_rising_clock
     jmp ps2kbd_init_idle    ; return
 
+ps2kbd_fsm_step:
+    ldx ps2kbd_state
+    jmp (ps2kbd_state_table, x)
 
-;ps2kbd_fsm_step:
-    ;ldx ps2kbd_state
-    ;jmp (ps2kbd_state_table, x)
-
-; Include this in your IRQ handler. Trashes A and X.
+; Include this in your IRQ handler. Trashes A, X and Y.
 PS2KBD_IRQ_HANDLER .macro
     lda W6522_REG_IFR           ; load interrupt flags
     sta ifr                     ; save them in ifr for bit tests
@@ -242,11 +276,9 @@ PS2KBD_IRQ_HANDLER .macro
     lda sr0                     ; load the first byte
     rol a                       ; rotate the carry bit back in
     tax
-    lda bit_reverse_table, x    ; flip the bits around the right way
-    ldx scancode_queue_write_cursor
-    sta scancode_queue, x
-    inx
-    stx scancode_queue_write_cursor
+    ldy bit_reverse_table, x    ; flip the bits around the right way
+
+    jsr ps2kbd_fsm_step
 
     ; TODO - sort this out
     W6522_SET_SR_MODE W6522_SR_MODE_DISABLED    ; reset SR count?
