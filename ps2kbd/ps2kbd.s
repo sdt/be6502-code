@@ -100,8 +100,6 @@ loop:
     dec scancode_errors
     lda #'X'
     jsr term_write_char
-    lda #'X'
-    jsr term_write_char
     bra loop
 
 .no_errors:
@@ -110,26 +108,16 @@ loop:
     beq loop
 
     lda scancode_queue, x
-    pha
-    bmi .break
-.make:
-    lda #'D'
-    jsr term_write_char
-    lda #'n'
-    jsr term_write_char
-    pla
-    bra .write_char
-.break:
-    lda #'U'
-    jsr term_write_char
-    lda #'p'
-    jsr term_write_char
-    pla
-    and #$7f
+    bmi .consume_key
 
+    tax
+    lda ps2kbd_plain_ascii, x
+    bne .write_char
+    lda #'?'
 .write_char:
-    jsr term_write_hex_byte
+    jsr term_write_char
 
+.consume_key:
     inc scancode_queue_read_cursor
     bra loop
 
