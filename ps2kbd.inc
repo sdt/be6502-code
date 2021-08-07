@@ -31,11 +31,15 @@ seen_ps2kbd .equ 1
     ZPB output_bits         ; 8 bits to write
     ZPB ps2kbd_state
 
-    ZPB scancode_queue_write_cursor
-    ZPB scancode_queue_read_cursor
+KEYCODE_QUEUE_BITS = 6
+KEYCODE_QUEUE_SIZE = 1 << KEYCODE_QUEUE_BITS
+KEYCODE_QUEUE_MASK = KEYCODE_QUEUE_SIZE - 1
+
+    ZPB keycode_queue_write_cursor
+    ZPB keycode_queue_read_cursor
 
     .dsect
-scancode_queue  .reserve 256
+keycode_queue  .reserve KEYCODE_QUEUE_SIZE
 scancode_errors .db 0
     .dend
 
@@ -99,8 +103,8 @@ ps2kbd_init:
     STORE scancode, 0
     STORE scancode_errors, 0
     STORE ifr, 0
-    STORE scancode_queue_write_cursor, 0
-    STORE scancode_queue_read_cursor, 0
+    STORE keycode_queue_write_cursor, 0
+    STORE keycode_queue_read_cursor, 0
     PS2KBD_SET_STATE PS2KBD_STATE_STD
 
     ; Fall through to ps2kbd_init_idle
@@ -171,10 +175,12 @@ ps2kbd_state_ext1_brk:
 
 ; Keycode is in A
 ps2kbd_emit_keycode:
-    ldx scancode_queue_write_cursor
-    sta scancode_queue, x
-    inx
-    stx scancode_queue_write_cursor
+    ldx keycode_queue_write_cursor
+    sta keycode_queue, x
+    txa
+    inc
+    and #KEYCODE_QUEUE_MASK
+    sta keycode_queue_write_cursor
     PS2KBD_SET_STATE PS2KBD_STATE_STD   ; revert to the std stte
 ps2kbd_ignore:
     rts
@@ -333,7 +339,7 @@ ps2kbd_irq_handler:
     tax
     ldy bit_reverse_table, x    ; flip the bits around the right way
 
-    jsr ps2kbd_fsm_step
+    jsr .ps2kbd_fsm_step
     ; Reset SR - we seem to need all three of these
     W6522_SET_SR_MODE W6522_SR_MODE_DISABLED    ; reset SR count?
     W6522_SET_SR_MODE W6522_SR_MODE_IN_CB1      ; reset SR count?
@@ -341,8 +347,24 @@ ps2kbd_irq_handler:
 .not_t2_interrupt:
     rts
 
-ps2kbd_fsm_step:
+.ps2kbd_fsm_step:
     ldx ps2kbd_state
     jmp (ps2kbd_state_table, x)
+
+; Sets Z flag is no keycodes available, returns read cursor in X
+ps2kbd_is_keycode_available:
+    ldx keycode_queue_read_cursor
+    cpx keycode_queue_write_cursor
+    rts
+
+; Assumes ps2kbd_keycode_available has just been called, and the X register
+; still holds keycode_queue_read_cursor
+ps2kbd_read_keycode:
+    txa                             ; use the A register to increment and
+    inc                             ; wrap the read cursor
+    and #KEYCODE_QUEUE_MASK
+    sta keycode_queue_read_cursor
+    lda keycode_queue, x            ; load A from the old read cursor in X
+    rts
 
     .endif ; seen_ps2kbd

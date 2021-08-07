@@ -103,13 +103,11 @@ loop:
     lda #'X'
     jsr term_write_char
     bra loop
-
 .no_errors:
-    ldx scancode_queue_read_cursor
-    cpx scancode_queue_write_cursor
-    beq loop
 
-    lda scancode_queue, x
+    jsr ps2kbd_is_keycode_available
+    beq loop
+    jsr ps2kbd_read_keycode         ; keycode is in A
     bmi .process_break
 
 .process_make:
@@ -139,7 +137,7 @@ loop:
     lda #TERM_UNKNOWN_CHAR
 .write_char:
     jsr term_write_char
-    bra .consume_key
+    bra loop
 
 .process_break:
     cmp #(KEY_LEFTSHIFT|$80)
@@ -154,20 +152,16 @@ loop:
     bra .clear_modifier
 .not_rightshift_break:
 
-.consume_key:
-    inc scancode_queue_read_cursor
     bra loop
 
 .set_modifier:
     ora modifier_keys
     sta modifier_keys
-    inc scancode_queue_read_cursor
     bra loop
 
 .clear_modifier:
     and modifier_keys
     sta modifier_keys
-    inc scancode_queue_read_cursor
     bra loop
 
     .include "vectors.inc"
