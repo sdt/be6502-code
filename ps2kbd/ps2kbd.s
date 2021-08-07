@@ -136,7 +136,7 @@ loop:
     lda ps2kbd_shifted_ascii, x
 .loaded
     bne .write_char
-    lda #'?'
+    lda #TERM_UNKNOWN_CHAR
 .write_char:
     jsr term_write_char
     bra .consume_key

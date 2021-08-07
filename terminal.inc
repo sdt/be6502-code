@@ -17,6 +17,7 @@ term_init:
 
     HD44780_SET_CUSTOM_CHAR CUSTOM_CHAR_TILDE,     .custom_char_tilde
     HD44780_SET_CUSTOM_CHAR CUSTOM_CHAR_BACKSLASH, .custom_char_backslash
+    HD44780_SET_CUSTOM_CHAR TERM_UNKNOWN_CHAR,     .custom_char_unknown
 
     lda #0
     jmp hd44780_set_row
@@ -46,6 +47,17 @@ CUSTOM_CHAR_BACKSLASH = 1
     .db %00100
     .db %00010
     .db %00001
+    .db %00000
+    .db %00000
+
+TERM_UNKNOWN_CHAR = 2
+.custom_char_unknown:
+    .db %00000
+    .db %11111
+    .db %10001
+    .db %10101
+    .db %10001
+    .db %11111
     .db %00000
     .db %00000
 
