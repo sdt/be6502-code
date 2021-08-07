@@ -61,6 +61,16 @@ irq:
 
 ; 11 + 11 + 11 = 33 = 4 * 8 + 1
 
+PS2KBD_CMD1 .macro b1
+    lda #\b1
+    jsr ps2kdb_enqueue_cmd
+    .endm
+
+PS2KBD_CMD2 .macro b1, b2
+    PS2KBD_CMD1 \b1
+    PS2KBD_CMD1 \b2
+    .endm
+
 start:
     STORE cnt, 0
     STORE ps2kbd_cmd_queue_write_cursor, 0
@@ -73,14 +83,60 @@ start:
 
     cli     ; enable interrupts (I=0)
 
+    PS2KBD_CMD1 $f6         ; set defaults
+    PS2KBD_CMD2 $f3, $34    ; set typematics
+    PS2KBD_CMD2 $ed, $07    ; set leds for some reason
+
+;    ; Reset
+;    ; > ff
+;    ;  < fa
+;    ;  ...
+;    ;  < aa = good, fc = bad
+;    lda #$ff ; reset
+;    jsr ps2kdb_enqueue_cmd
+
+;    ; Set defaults
+;    ; > f6
+;    ;  < fa
+;    lda #$f6
+;    jsr ps2kdb_enqueue_cmd
+
+;    ; Set typematics
+;    ; > f3
+;    ;  < fa
+;    ; > $arg
+;    ;  < fa
+;    lda #$f3
+;    jsr ps2kdb_enqueue_cmd
+;    lda #$7f
+;    jsr ps2kdb_enqueue_cmd
+
+;    ; Set LEDS
+;    ; > ed
+;    ;  < fa
+;    ; > $leds
+;    ;  > fa
+;    lda #$ed
+;    jsr ps2kdb_enqueue_cmd
+;    lda #$3
+;    jsr ps2kdb_enqueue_cmd
+
 ;    lda #$f0    ; set scan code set 2 (no set 3!)
 ;    jsr ps2kdb_enqueue_cmd
 ;    lda #$02
 ;    jsr ps2kdb_enqueue_cmd
-    lda #$f0
-    jsr ps2kdb_enqueue_cmd
-    lda #$00
-    jsr ps2kdb_enqueue_cmd
+
+;    ; Ask for scancode set
+;    ; > f0
+;    ;  < fa
+;    ; > 00
+;    ;  < fa
+;    ;  < $set
+;    lda #$f0
+;    jsr ps2kdb_enqueue_cmd
+;    lda #$00
+;    jsr ps2kdb_enqueue_cmd
+
 ;    lda #$ed
 ;    jsr ps2kdb_enqueue_cmd
 ;    lda #$ed
