@@ -46,6 +46,15 @@ STORE .macro dest, value
     .endm
 
 ;------------------------------------------------------------------------------
+; Shared parameter passing area
+; Use indexed indirect addressing mode to dereference these pointers.
+; eg. is address_param_0 contains $ab20 and y contains $0f, then
+;   lda (address_param_0), y
+; Will load the byte at $ab2f
+    ZPW address_param_0
+    ZPW address_param_1
+
+;------------------------------------------------------------------------------
 ; RAM variables. These start at $0200, and are wrapped in .dsect / .dend
 ; directives
     .dsect

@@ -14,8 +14,40 @@ term_init:
     stz term_curs_col
     stz term_curs_row
     jsr hd44780_init
+
+    HD44780_SET_CUSTOM_CHAR CUSTOM_CHAR_TILDE,     .custom_char_tilde
+    HD44780_SET_CUSTOM_CHAR CUSTOM_CHAR_BACKSLASH, .custom_char_backslash
+
     lda #0
     jmp hd44780_set_row
+
+; Note: We have a bug in hd44780_scroll_up - we copy 16 chars into the row
+; buffer, but we call hd44780_write_string to write that buffer back out. If
+; there's a zero in that buffer, we stop. As a workaround, we use the fact
+; that the eight custom chars in hd44780 get repeated for 0-7 and then 8-15.
+; To avoid the zero problem, we use index+8 - the chars look the same, but we
+; don't write any zeros.
+CUSTOM_CHAR_TILDE = 0
+.custom_char_tilde:
+    .db %00000
+    .db %00000
+    .db %01101
+    .db %10010
+    .db %00000
+    .db %00000
+    .db %00000
+    .db %00000
+
+CUSTOM_CHAR_BACKSLASH = 1
+.custom_char_backslash:
+    .db %00000
+    .db %10000
+    .db %01000
+    .db %00100
+    .db %00010
+    .db %00001
+    .db %00000
+    .db %00000
 
     ZPW term_string
 
@@ -76,11 +108,23 @@ TERM_WRITE_U16 .macro address
 .done:
     .endm
 
+REPLACE_CHAR .macro char, replacement
+    cmp #\char
+    bne .not_custom_char\@
+    lda #(\replacement + 8) ; see note above about hd44780_scroll_up bug
+    bra .write_char
+.not_custom_char\@:
+    .endm
+
 ; Ascii char to write is in A register.
 term_write_char:
     cmp #'\n'
     beq .eol
 
+    REPLACE_CHAR '~',  CUSTOM_CHAR_TILDE
+    REPLACE_CHAR '\\', CUSTOM_CHAR_BACKSLASH
+
+.write_char:
     jsr hd44780_write_char
 
     ; See if we're at to the end of the line.

@@ -24,6 +24,9 @@ HD44780_DATA_DDR   = W6522_REG_DDRA
 HD44780_DATA_OR    = W6522_REG_ORA
 HD44780_DATA_IR    = W6522_REG_IRA
 
+HD44780_CGRAM_ADDR = %01000000  ; Or'ed with 6-bit cgram address
+HD44780_DDRAM_ADDR = %10000000  ; Or'ed with 7-bit ddram address
+
     ZPW     hd44780_string
 
 HD44780_INIT .macro
@@ -132,7 +135,7 @@ hd44780_write_value:
     rts
 
 HD44780_SET_CURSOR .macro row, col
-dram_cmd\@ = $80 | ($40 * \row) | \col
+dram_cmd\@ = HD44780_DATA_DDR | ($40 * \row) | \col
     HD44780_WRITE_REGISTER dram_cmd\@
     .endm
 
@@ -197,11 +200,40 @@ hd44780_write_char:
     bra hd44780_write_value
 
 ; Sets the cursor to column zero on the specified row.
-_row_cmd    .db $80 | $00, $80 | $40
 hd44780_set_row:
     tax
-    lda _row_cmd, x
+    lda .row_cmd, x
     jmp hd44780_write_register
+.row_cmd    .db HD44780_DDRAM_ADDR|$00, HD44780_DDRAM_ADDR|$40
+
+HD44780_SET_CUSTOM_CHAR .macro index, address
+    lda #<\address
+    sta address_param_0+0
+    lda #>\address
+    sta address_param_0+1
+    lda #( (\index << 3) | HD44780_CGRAM_ADDR)
+    jsr hd44780_write_cgram_addr
+    .endm
+
+; Pointer to 8 bytes of character data are in address_param_0
+; Character number 0..7 is in A register
+hd44780_write_cgram:
+    asl
+    asl
+    asl                     ; cgram address is character number * 8
+    ora #HD44780_CGRAM_ADDR ; set cgram address command
+hd44780_write_cgram_addr:
+    jsr hd44780_write_register
+    ldy #0
+.loop:
+    phy
+    lda (address_param_0), y
+    jsr hd44780_write_char
+    ply
+    iny
+    cpy #8
+    bne .loop
+    rts
 
 HD44780_SET_CURSOR .macro row, col
 dram_cmd\@ = $80 | ($40 * \row) | \col
