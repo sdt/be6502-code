@@ -35,12 +35,20 @@ KEYCODE_QUEUE_BITS = 6
 KEYCODE_QUEUE_SIZE = 1 << KEYCODE_QUEUE_BITS
 KEYCODE_QUEUE_MASK = KEYCODE_QUEUE_SIZE - 1
 
+COMMAND_QUEUE_BITS = 3
+COMMAND_QUEUE_SIZE = 1 << COMMAND_QUEUE_BITS
+COMMAND_QUEUE_MASK = COMMAND_QUEUE_SIZE - 1
+
     ZPB keycode_queue_write_cursor
     ZPB keycode_queue_read_cursor
+    ZPB command_queue_write_cursor
+    ZPB command_queue_read_cursor
 
     .dsect
-keycode_queue  .reserve KEYCODE_QUEUE_SIZE
-scancode_errors .db 0
+keycode_queue       .reserve KEYCODE_QUEUE_SIZE
+command_queue       .reserve COMMAND_QUEUE_SIZE
+scancode_errors     .db 0
+command_response    .db 0
     .dend
 
 T2_COUNT = 11 - 1           ; one less because that's how t2 011 mode works
@@ -102,9 +110,12 @@ ps2kbd_init:
     STORE sr0, 0
     STORE scancode, 0
     STORE scancode_errors, 0
+    STORE command_response, 0
     STORE ifr, 0
     STORE keycode_queue_write_cursor, 0
     STORE keycode_queue_read_cursor, 0
+    STORE command_queue_write_cursor, 0
+    STORE command_queue_read_cursor, 0
     PS2KBD_SET_STATE PS2KBD_STATE_STD
 
     ; Fall through to ps2kbd_init_idle
@@ -122,6 +133,10 @@ ps2kbd_init_idle:
 
 ; Assume that most recent scancode is in Y register
 ps2kbd_state_std:
+    cpy #$fa                        ; was is an ack
+    beq register_ack_nak            ; --> register the ack
+;    cpy #$fe                        ; was is a nak
+;    beq register_ack_nak            ; --> register the nak
     cpy #$f0                        ; was it a break code?
     beq enter_ps2kbd_state_std_brk  ; -> enter std_brk state
     cpy #$e0                        ; was it an ext0 code?
@@ -131,6 +146,10 @@ ps2kbd_state_std:
     lda ps2kbd_standard_keycode, y  ; load the keycode
     beq ps2kbd_scancode_error       ; handle error (keycode = 0)
     bra ps2kbd_emit_keycode         ; emit the make keycode
+
+register_ack_nak:
+    sty command_response
+    rts
 
 ps2kbd_state_std_brk:
     lda ps2kbd_standard_keycode, y
@@ -186,7 +205,8 @@ ps2kbd_ignore:
     rts
 
 ps2kbd_scancode_error:
-    inc scancode_errors                 ; "log" the error, fall through
+    sty scancode_errors
+;    inc scancode_errors                 ; "log" the error, fall through
 enter_ps2kbd_state_std:
     PS2KBD_SET_STATE PS2KBD_STATE_STD   ; revert to the std state
     rts
@@ -249,6 +269,16 @@ ps2kbd_wait_for_rising_clock:
 ; Call this to send a byte to the device. Data is in A register.
 ps2kbd_send_byte_host_to_device:
     sta scancode
+
+; Show the outgoing commands
+;    lda #'<'
+;    jsr term_write_char
+;    lda scancode
+;    jsr term_write_hex_byte
+;    lda #'>'
+;    jsr term_write_char
+;    lda scancode
+
     jsr parity
     eor #1 ; flip the bit for odd parity
     sta scancode_parity
@@ -365,6 +395,61 @@ ps2kbd_read_keycode:
     and #KEYCODE_QUEUE_MASK
     sta keycode_queue_read_cursor
     lda keycode_queue, x            ; load A from the old read cursor in X
+    rts
+
+PS2KBD_ENQUEUE .macro cmd_or_arg
+    lda #\cmd_or_arg
+    jsr ps2kbd_enqueue_command
+    .endm
+
+ps2kbd_set_defaults:
+    PS2KBD_ENQUEUE $f6  ; set defaults
+    PS2KBD_ENQUEUE $f3  ; set typematic
+    PS2KBD_ENQUEUE $34  ; 5.0cps, 500ms delay
+    jmp ps2kbd_process_cmd_queue
+
+; Led state in A
+ps2kbd_set_leds:
+    pha
+    PS2KBD_ENQUEUE $ed ; set leds
+    pla
+    jsr ps2kbd_enqueue_command
+    jmp ps2kbd_process_cmd_queue
+
+; Command byte in A
+ps2kbd_enqueue_command:
+    ldx command_queue_write_cursor   ; write cursor is in X
+    sta command_queue, x
+    txa                              ; copy the write cursor to` A
+    inc
+    and #COMMAND_QUEUE_MASK
+    sta command_queue_write_cursor   ; update the write cursor via A
+    rts
+
+ps2kbd_check_command_queue:
+    sei                     ; command_response gets written from ISR
+    lda command_response
+    stz command_response
+    cli
+    bne .check_ack
+    rts
+.check_ack
+    cmp #$fa
+    bne ps2kbd_process_cmd_queue ; if not ack, skip straight to process queue
+    ; consume the command
+    lda command_queue_read_cursor
+    inc
+    and #COMMAND_QUEUE_MASK
+    sta command_queue_read_cursor
+    ; fall through to process command queue
+
+ps2kbd_process_cmd_queue:
+    ldx command_queue_read_cursor
+    cpx command_queue_write_cursor
+    beq .no_command_available
+    lda command_queue, x
+    jsr ps2kbd_send_byte_host_to_device
+.no_command_available:
     rts
 
     .endif ; seen_ps2kbd
