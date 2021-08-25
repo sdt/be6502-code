@@ -27,6 +27,8 @@ irq:
 
 ; 11 + 11 + 11 = 33 = 4 * 8 + 1
 
+msg: .ascii ">"
+
 start:
     STORE modifier_keys, 0
     STORE leds, 0
@@ -37,6 +39,8 @@ start:
     jsr term_init
 
     cli     ; enable interrupts (I=0)
+
+    TERM_WRITE_STRING msg
 
     jsr ps2kbd_set_defaults
 
