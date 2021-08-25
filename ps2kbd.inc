@@ -405,7 +405,9 @@ PS2KBD_ENQUEUE .macro cmd_or_arg
 ps2kbd_set_defaults:
     PS2KBD_ENQUEUE $f6  ; set defaults
     PS2KBD_ENQUEUE $f3  ; set typematic
-    PS2KBD_ENQUEUE $34  ; 5.0cps, 500ms delay
+    PS2KBD_ENQUEUE $34  ; ... 5.0cps, 500ms delay
+    PS2KBD_ENQUEUE $ed  ; set leds
+    PS2KBD_ENQUEUE $00  ; ... to all off
     jmp ps2kbd_process_cmd_queue
 
 ; Led state in A

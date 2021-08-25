@@ -9,6 +9,10 @@ MOD_LEFTSHIFT   = %00000001
 MOD_RIGHTSHIFT  = %00000010
 MOD_SHIFT_MASK  = MOD_LEFTSHIFT | MOD_RIGHTSHIFT
 
+LED_SCROLLLOCK  = %00000001
+LED_NUMLOCK     = %00000010
+LED_CAPSLOCK    = %00000100
+
 irq:
     pha
     phx
@@ -56,15 +60,23 @@ loop:
 
 .process_make:
 
-    cmp #KEY_A
-    bne .not_a
-    pha
-    lda leds
-    eor #7
-    sta leds
-    jsr ps2kbd_set_leds
-    pla
-.not_a:
+    cmp #KEY_CAPSLOCK
+    bne .not_capslock
+    lda #LED_CAPSLOCK
+    bra .toggle_leds
+.not_capslock:
+
+    cmp #KEY_NUMLOCK
+    bne .not_numlock
+    lda #LED_NUMLOCK
+    bra .toggle_leds
+.not_numlock:
+
+    cmp #KEY_SCROLLLOCK
+    bne .not_scrolllock
+    lda #LED_SCROLLLOCK
+    bra .toggle_leds
+.not_scrolllock:
 
     cmp #KEY_LEFTSHIFT
     bne .not_leftshift
@@ -117,5 +129,12 @@ loop:
     and modifier_keys
     sta modifier_keys
     bra loop
+
+; led bit to toggle is in A
+.toggle_leds:
+    eor leds
+    sta leds
+    jsr ps2kbd_set_leds
+    jmp loop
 
     .include "vectors.inc"
