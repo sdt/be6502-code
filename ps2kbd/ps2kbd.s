@@ -102,6 +102,7 @@ loop:
     bne .write_char
     lda #TERM_UNKNOWN_CHAR
 .write_char:
+    jsr .handle_capslock
     jsr term_write_char
     bra loop
 
@@ -136,5 +137,30 @@ loop:
     sta leds
     jsr ps2kbd_set_leds
     jmp loop
+
+; ascii char is in A
+.handle_capslock:
+    pha
+    lda #LED_CAPSLOCK
+    and leds
+    bne .try_lowercase
+    pla
+    rts
+.try_lowercase:
+    pla
+    cmp #'a'
+    bmi .try_uppercase
+    cmp #'z'
+    bpl .try_uppercase
+    eor #$20
+    rts
+.try_uppercase:
+    cmp #'A'
+    bmi .capslock_done
+    cmp #'Z'
+    bpl .capslock_done
+    eor #$20
+.capslock_done:
+    rts
 
     .include "vectors.inc"
