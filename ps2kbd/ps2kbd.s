@@ -98,15 +98,35 @@ loop:
     lda modifier_keys
     and #MOD_SHIFT_MASK
     bne .shifted
-    lda ps2kbd_plain_ascii, x
+    ldy ps2kbd_plain_ascii, x
     bra .loaded
 .shifted:
-    lda ps2kbd_shifted_ascii, x
-.loaded
-    bne .write_char
+    ldy ps2kbd_shifted_ascii, x
+.loaded:
+    bne .known_char
     lda #TERM_UNKNOWN_CHAR
-.write_char:
-    jsr .handle_capslock
+    jsr term_write_char
+    bra loop
+.known_char:
+    lda #LED_CAPSLOCK
+    and leds
+    bne .capslock_on
+    tya
+    jsr term_write_char
+    bra loop
+.capslock_on:
+    tya
+    sec
+    sbc #'A'        ; char = char - 'A'
+    and #( ~$20 )   ; char &= ~0x20
+    cmp #26         ; if (char < 26)
+    bcs .not_alpha
+    tya
+    eor #$20        ;   char ^= 0x20 ; flip case
+    jsr term_write_char
+    bra loop
+.not_alpha:
+    tya
     jsr term_write_char
     bra loop
 
@@ -116,24 +136,22 @@ loop:
     lda #(~MOD_LEFTSHIFT)
     bra .clear_modifier
 .not_leftshift_break:
-
     cmp #(KEY_RIGHTSHIFT|$80)
     bne .not_rightshift_break
     lda #(~MOD_RIGHTSHIFT)
     bra .clear_modifier
 .not_rightshift_break:
-
-    bra loop
+    jmp loop
 
 .set_modifier:
     ora modifier_keys
     sta modifier_keys
-    bra loop
+    jmp loop
 
 .clear_modifier:
     and modifier_keys
     sta modifier_keys
-    bra loop
+    jmp loop
 
 ; led bit to toggle is in A
 .toggle_leds:
@@ -141,30 +159,5 @@ loop:
     sta leds
     jsr ps2kbd_set_leds
     jmp loop
-
-; ascii char is in A
-.handle_capslock:
-    pha
-    lda #LED_CAPSLOCK
-    and leds
-    bne .try_lowercase
-    pla
-    rts
-.try_lowercase:
-    pla
-    cmp #'a'
-    bmi .try_uppercase
-    cmp #'z'
-    bpl .try_uppercase
-    eor #$20
-    rts
-.try_uppercase:
-    cmp #'A'
-    bmi .capslock_done
-    cmp #'Z'
-    bpl .capslock_done
-    eor #$20
-.capslock_done:
-    rts
 
     .include "vectors.inc"
