@@ -280,6 +280,11 @@ hd44780_write_row:
     HD44780_WRITE_STRING _hd44780_row_buffer
     rts
 
+hd44780_clear:
+    HD44780_WRITE_REGISTER $01 ; clear
+    HD44780_WRITE_REGISTER $02 ; home
+    rts
+
 hd44780_init:
     HD44780_INIT
     HD44780_WRITE_REGISTER $38 ; 8-bit interface, 2-line display, 5x8 fnot

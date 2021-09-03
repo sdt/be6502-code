@@ -133,6 +133,9 @@ term_write_char:
     cmp #'\n'
     beq .eol
 
+    cmp #27 ; escape
+    beq .clear
+
     REPLACE_CHAR '~',  CUSTOM_CHAR_TILDE
     REPLACE_CHAR '\\', CUSTOM_CHAR_BACKSLASH
 
@@ -148,6 +151,11 @@ term_write_char:
     ina
     sta term_curs_col
     rts
+
+.clear:
+    stz term_curs_col
+    stz term_curs_row
+    jmp hd44780_clear
 
 .eol:
     ; We've hit the end of the line. We want to wrap to the next line, but do we
