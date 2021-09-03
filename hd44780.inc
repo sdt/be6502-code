@@ -202,9 +202,21 @@ hd44780_write_char:
 ; Sets the cursor to column zero on the specified row.
 hd44780_set_row:
     tax
-    lda .row_cmd, x
+    lda _row_cmd, x
     jmp hd44780_write_register
-.row_cmd    .db HD44780_DDRAM_ADDR|$00, HD44780_DDRAM_ADDR|$40
+_row_cmd    .db HD44780_DDRAM_ADDR|$00, HD44780_DDRAM_ADDR|$40
+
+; X register is the column, Y register is the row
+hd44780_set_row_col:
+    lda _row_cmd, y
+    sta .row_col_tmp
+    txa
+    clc
+    adc .row_col_tmp
+    jmp hd44780_write_register
+    .dsect
+.row_col_tmp .db 0
+    .dend
 
 HD44780_SET_CUSTOM_CHAR .macro index, address
     lda #<\address

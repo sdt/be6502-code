@@ -136,6 +136,9 @@ term_write_char:
     cmp #27 ; escape
     beq .clear
 
+    cmp #8 ; backspace
+    beq .backspace
+
     REPLACE_CHAR '~',  CUSTOM_CHAR_TILDE
     REPLACE_CHAR '\\', CUSTOM_CHAR_BACKSLASH
 
@@ -178,5 +181,34 @@ term_write_char:
     jsr hd44780_scroll_up
     lda #( TERM_ROWS - 1 )  ; Now reset the cursor back to the first column
     jmp hd44780_set_row     ; on the bottom row.
+
+.backspace:
+    ; To backspace:                     |abc_
+    ;   - A: move cursor one space left |abc  <- cursor under c
+    ;   - B: write a space              |ab _
+    ;   - C: move cursor one space left |ab_
+    ; If we're at first column, replace A with setting the cursor under the
+    ; last column of the previous row, then proceed with B and C.
+    ; If we're at 0,0, do nothing.
+    lda term_curs_col
+    beq .first_col
+    dec                     ; first A case above
+    bra .do_backspace
+.first_col:
+    lda term_curs_row
+    bne .not_first_row
+    rts                     ; at 0,0 - just bail
+.not_first_row:
+    dec term_curs_row
+    lda #( TERM_COLS - 1 )  ; second A case above
+.do_backspace:
+    sta term_curs_col
+    jsr .set_cursor         ; complete A case
+    lda #' '
+    jsr hd44780_write_char  ; B
+.set_cursor:
+    ldx term_curs_col       ; C
+    ldy term_curs_row
+    jmp hd44780_set_row_col
 
     .endif ; seen_terminal
